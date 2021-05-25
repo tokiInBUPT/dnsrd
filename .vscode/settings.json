@@ -6,6 +6,7 @@
         "stdio.h": "c",
         "winsock.h": "c",
         "dnsquery.h": "c",
-        "winsock2.h": "c"
+        "winsock2.h": "c",
+        "dnspacket.h": "c"
     }
 }
