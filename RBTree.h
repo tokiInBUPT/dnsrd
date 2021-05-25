@@ -32,22 +32,6 @@ struct Node
     enum type color;
 };
 
-struct Queue
-{
-    struct Node *data;
-    struct Queue *next;
-};
-
-struct Queue *front = NULL;
-struct Queue *rear = NULL;
-
-struct Node *pfront()
-{
-    struct Node *data;
-    data = front->data;
-    return data;
-}
-
 struct Node *initRBTree();
 struct Node *RB_insert(struct Node *T, Key key, MyData mydata);
 struct Node *BST_search(struct Node *root, Key key);
