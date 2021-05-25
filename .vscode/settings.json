@@ -1,0 +1,11 @@
+{
+    "terminal.integrated.automationShell.windows": "C:\\Windows\\system32\\cmd.exe",
+    "files.associations": {
+        "*.html": "html",
+        "stdint.h": "c",
+        "stdio.h": "c",
+        "winsock.h": "c",
+        "dnsquery.h": "c",
+        "winsock2.h": "c"
+    }
+}
