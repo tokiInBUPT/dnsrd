@@ -3,12 +3,21 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <winsock2.h>
 
 enum type
 {
     RED,
     BLACK
 };
+
+typedef struct MyData
+{
+    uint16_t id;
+    sockaddr_in addr;
+    uint16_t time;
+} MyData;
+
 
 struct Node_int
 {
