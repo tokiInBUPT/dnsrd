@@ -1,17 +1,16 @@
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <string.h>
-#include <winsock2.h>
 #include <time.h>
+#include <winsock2.h>
 
 #define MAXID 65535
 
-typedef struct idMap
-{
+typedef struct idMap {
     uint32_t time;
     uint16_t originalId;
-    sockaddr_in addr;
+    struct sockaddr_in addr;
 } IdMap;
 
 IdMap *initIdMap();
