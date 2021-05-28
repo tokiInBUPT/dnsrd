@@ -157,12 +157,12 @@ DNSPacket DNSPacket_decode(Buffer buffer) {
     for (int i = 0; i < packet.header.questionCount; i++) {
         DNSQuestion *r = &packet.questions[i];
         r->name = (char *)malloc(sizeof(char) * 256);
-        data += decodeQname((char *)data, buffer.data, r->name);
+        data += decodeQname((char *)data, (char *)buffer.data, r->name);
         uint16_t tmp;
         data = _read16(data, &tmp);
-        r->qtype = tmp;
+        r->qtype = (DNSQType)tmp;
         data = _read16(data, &tmp);
-        r->qclass = tmp;
+        r->qclass = (DNSQClass)tmp;
     }
     /* Answers */
     if (packet.header.answerCount > 0) {
@@ -170,12 +170,12 @@ DNSPacket DNSPacket_decode(Buffer buffer) {
         for (int i = 0; i < packet.header.answerCount; i++) {
             DNSRecord *r = &packet.answers[i];
             r->name = (char *)malloc(sizeof(char) * 256);
-            data += decodeQname((char *)data, buffer.data, r->name);
+            data += decodeQname((char *)data, (char *)buffer.data, r->name);
             uint16_t tmp;
             data = _read16(data, &tmp);
-            r->type = tmp;
+            r->type = (DNSQType)tmp;
             data = _read16(data, &tmp);
-            r->rclass = tmp;
+            r->rclass = (DNSQClass)tmp;
             data = _read32(data, &r->ttl);
             data = _read16(data, &r->rdataLength);
             r->rdata = (char *)malloc(sizeof(char) * r->rdataLength);
@@ -190,12 +190,12 @@ DNSPacket DNSPacket_decode(Buffer buffer) {
         for (int i = 0; i < packet.header.authorityCount; i++) {
             DNSRecord *r = &packet.authorities[i];
             r->name = (char *)malloc(sizeof(char) * 256);
-            data += decodeQname((char *)data, buffer.data, r->name);
+            data += decodeQname((char *)data, (char*)buffer.data, r->name);
             uint16_t tmp;
             data = _read16(data, &tmp);
-            r->type = tmp;
+            r->type = (DNSQType)tmp;
             data = _read16(data, &tmp);
-            r->rclass = tmp;
+            r->rclass = (DNSQClass)tmp;
             data = _read32(data, &r->ttl);
             data = _read16(data, &r->rdataLength);
             r->rdata = (char *)malloc(sizeof(char) * r->rdataLength);
@@ -210,12 +210,12 @@ DNSPacket DNSPacket_decode(Buffer buffer) {
         for (int i = 0; i < packet.header.additionalCount; i++) {
             DNSRecord *r = &packet.additional[i];
             r->name = (char *)malloc(sizeof(char) * 256);
-            data += decodeQname((char *)data, buffer.data, r->name);
+            data += decodeQname((char *)data, (char *)buffer.data, r->name);
             uint16_t tmp;
             data = _read16(data, &tmp);
-            r->type = tmp;
+            r->type = (DNSQType)tmp;
             data = _read16(data, &tmp);
-            r->rclass = tmp;
+            r->rclass = (DNSQClass)tmp;
             data = _read32(data, &r->ttl);
             data = _read16(data, &r->rdataLength);
             r->rdata = (char *)malloc(sizeof(char) * r->rdataLength);
