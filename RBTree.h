@@ -1,29 +1,27 @@
+#ifndef RBTREE_H
+#define RBTREE_H
 #include "DNSPacket.h"
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <string.h>
 
-enum type
-{
+enum type {
     RED,
     BLACK
 };
 
-typedef struct MyData
-{
+typedef struct MyData {
     uint32_t time;
     DNSRecord record;
 } MyData;
 
-typedef struct Key
-{
+typedef struct Key {
     DNSQType qtype;
     char name[255];
 } Key;
 
-struct Node
-{
+struct Node {
     Key key;
     struct MyData myData;
     struct Node *left;
@@ -37,3 +35,4 @@ struct Node *RB_insert(struct Node *T, Key key, MyData mydata);
 struct Node *BST_search(struct Node *root, Key key);
 struct Node *RB_delete(struct Node *T, struct Node *z);
 void deleteAll(struct Node *root);
+#endif

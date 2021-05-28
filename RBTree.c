@@ -2,33 +2,25 @@
 
 int compareKey(Key a, Key b, int greaterOrlower) // greater 1, equal 0, lower -1
 {
-    switch (greaterOrlower)
-    {
+    switch (greaterOrlower) {
     case 1:
-        if (a.qtype > b.qtype)
-        {
+        if (a.qtype > b.qtype) {
             return 1;
-        }
-        else if (strcmp(a.name, b.name) > 0)
-        {
+        } else if (strcmp(a.name, b.name) > 0) {
             return 1;
         }
         return 0;
         break;
     case 0:
-        if (a.qtype == b.qtype && strcmp(a.name, b.name) == 0)
-        {
+        if (a.qtype == b.qtype && strcmp(a.name, b.name) == 0) {
             return 1;
         }
         return 0;
         break;
     case -1:
-        if (a.qtype < b.qtype)
-        {
+        if (a.qtype < b.qtype) {
             return 1;
-        }
-        else if (strcmp(a.name, b.name) < 0)
-        {
+        } else if (strcmp(a.name, b.name) < 0) {
             return 1;
         }
         return 0;
@@ -39,8 +31,7 @@ int compareKey(Key a, Key b, int greaterOrlower) // greater 1, equal 0, lower -1
     }
 }
 
-void LeftRotate(struct Node **T, struct Node **x)
-{
+void LeftRotate(struct Node **T, struct Node **x) {
     struct Node *y = (*x)->right;
     (*x)->right = y->left;
 
@@ -63,8 +54,7 @@ void LeftRotate(struct Node **T, struct Node **x)
     (*x)->parent = y;
 }
 
-void RightRotate(struct Node **T, struct Node **x)
-{
+void RightRotate(struct Node **T, struct Node **x) {
     struct Node *y = (*x)->left;
     (*x)->left = y->right;
 
@@ -86,32 +76,26 @@ void RightRotate(struct Node **T, struct Node **x)
     (*x)->parent = y;
 }
 
-void RB_insert_fixup(struct Node **T, struct Node **z)
-{
+void RB_insert_fixup(struct Node **T, struct Node **z) {
     struct Node *grandparent = NULL;
     struct Node *parentpt = NULL;
 
-    while (((*z) != *T) && ((*z)->color != BLACK) && ((*z)->parent->color == RED))
-    {
+    while (((*z) != *T) && ((*z)->color != BLACK) && ((*z)->parent->color == RED)) {
         parentpt = (*z)->parent;
         grandparent = (*z)->parent->parent;
 
-        if (parentpt == grandparent->left)
-        {
+        if (parentpt == grandparent->left) {
             struct Node *uncle = grandparent->right;
 
-            if (uncle != NULL && uncle->color == RED)
-            {
+            if (uncle != NULL && uncle->color == RED) {
                 grandparent->color = RED;
                 parentpt->color = BLACK;
                 uncle->color = BLACK;
                 *z = grandparent;
             }
 
-            else
-            {
-                if ((*z) == parentpt->right)
-                {
+            else {
+                if ((*z) == parentpt->right) {
                     LeftRotate(T, &parentpt);
                     (*z) = parentpt;
                     parentpt = (*z)->parent;
@@ -124,22 +108,18 @@ void RB_insert_fixup(struct Node **T, struct Node **z)
             }
         }
 
-        else
-        {
+        else {
             struct Node *uncle = grandparent->left;
 
-            if (uncle != NULL && uncle->color == RED)
-            {
+            if (uncle != NULL && uncle->color == RED) {
                 grandparent->color = RED;
                 parentpt->color = BLACK;
                 uncle->color = BLACK;
                 (*z) = grandparent;
             }
 
-            else
-            {
-                if ((*z) == parentpt->left)
-                {
+            else {
+                if ((*z) == parentpt->left) {
                     RightRotate(T, &parentpt);
                     (*z) = parentpt;
                     parentpt = (*z)->parent;
@@ -155,8 +135,7 @@ void RB_insert_fixup(struct Node **T, struct Node **z)
     (*T)->color = BLACK;
 }
 
-struct Node *RB_insert(struct Node *T, Key key, MyData mydata)
-{
+struct Node *RB_insert(struct Node *T, Key key, MyData mydata) {
     struct Node *z = (struct Node *)malloc(sizeof(struct Node));
     z->key = key;
     z->myData = mydata;
@@ -168,8 +147,7 @@ struct Node *RB_insert(struct Node *T, Key key, MyData mydata)
     struct Node *y = NULL;
     struct Node *x = T; //root
 
-    while (x != NULL)
-    {
+    while (x != NULL) {
         y = x;
         if (compareKey(z->key, x->key, -1))
             x = x->left;
@@ -193,40 +171,32 @@ struct Node *RB_insert(struct Node *T, Key key, MyData mydata)
     return T;
 }
 
-struct Node *Tree_minimum(struct Node *node)
-{
+struct Node *Tree_minimum(struct Node *node) {
     while (node->left != NULL)
         node = node->left;
 
     return node;
 }
 
-void RB_delete_fixup(struct Node **T, struct Node **x)
-{
-    while ((*x) != *T && (*x)->color == BLACK)
-    {
-        if ((*x) == (*x)->parent->left)
-        {
+void RB_delete_fixup(struct Node **T, struct Node **x) {
+    while ((*x) != *T && (*x)->color == BLACK) {
+        if ((*x) == (*x)->parent->left) {
             struct Node *w = (*x)->parent->right;
 
-            if (w->color == RED)
-            {
+            if (w->color == RED) {
                 w->color = BLACK;
                 (*x)->parent->color = BLACK;
                 LeftRotate(T, &((*x)->parent));
                 w = (*x)->parent->right;
             }
 
-            if (w->left->color == BLACK && w->right->color == BLACK)
-            {
+            if (w->left->color == BLACK && w->right->color == BLACK) {
                 w->color = RED;
                 (*x) = (*x)->parent;
             }
 
-            else
-            {
-                if (w->right->color == BLACK)
-                {
+            else {
+                if (w->right->color == BLACK) {
                     w->left->color = BLACK;
                     w->color = RED;
                     RightRotate(T, &w);
@@ -241,28 +211,23 @@ void RB_delete_fixup(struct Node **T, struct Node **x)
             }
         }
 
-        else
-        {
+        else {
             struct Node *w = (*x)->parent->left;
 
-            if (w->color == RED)
-            {
+            if (w->color == RED) {
                 w->color = BLACK;
                 (*x)->parent->color = BLACK;
                 RightRotate(T, &((*x)->parent));
                 w = (*x)->parent->left;
             }
 
-            if (w->right->color == BLACK && w->left->color == BLACK)
-            {
+            if (w->right->color == BLACK && w->left->color == BLACK) {
                 w->color = RED;
                 (*x) = (*x)->parent;
             }
 
-            else
-            {
-                if (w->left->color == BLACK)
-                {
+            else {
+                if (w->left->color == BLACK) {
                     w->right->color = BLACK;
                     w->color = RED;
                     LeftRotate(T, &w);
@@ -280,8 +245,7 @@ void RB_delete_fixup(struct Node **T, struct Node **x)
     (*x)->color = BLACK;
 }
 
-void RB_transplat(struct Node **T, struct Node **u, struct Node **v)
-{
+void RB_transplat(struct Node **T, struct Node **u, struct Node **v) {
     if ((*u)->parent == NULL)
         *T = *v;
 
@@ -294,28 +258,24 @@ void RB_transplat(struct Node **T, struct Node **u, struct Node **v)
         (*v)->parent = (*u)->parent;
 }
 
-struct Node *RB_delete(struct Node *T, struct Node *z)
-{
+struct Node *RB_delete(struct Node *T, struct Node *z) {
     struct Node *y = z;
     enum type yoc;
     yoc = z->color; // y's original color
 
     struct Node *x;
 
-    if (z->left == NULL)
-    {
+    if (z->left == NULL) {
         x = z->right;
         RB_transplat(&T, &z, &(z->right));
     }
 
-    else if (z->right == NULL)
-    {
+    else if (z->right == NULL) {
         x = z->left;
         RB_transplat(&T, &z, &(z->left));
     }
 
-    else
-    {
+    else {
         y = Tree_minimum(z->right);
         yoc = y->color;
         x = y->right;
@@ -323,8 +283,7 @@ struct Node *RB_delete(struct Node *T, struct Node *z)
         if (y->parent == z)
             x->parent = y;
 
-        else
-        {
+        else {
             RB_transplat(&T, &y, &(y->right));
             y->right = z->right;
             y->right->parent = y;
@@ -342,8 +301,7 @@ struct Node *RB_delete(struct Node *T, struct Node *z)
     return T;
 }
 
-struct Node *BST_search(struct Node *root, Key key)
-{
+struct Node *BST_search(struct Node *root, Key key) {
     if (root == NULL || compareKey(root->key, key, 0))
         return root;
 
@@ -353,22 +311,21 @@ struct Node *BST_search(struct Node *root, Key key)
         return BST_search(root->right, key);
 }
 
-void deleteAll(struct Node *root)
-{
-    if (root->left)
-    {
+void deleteAll(struct Node *root) {
+    if (root == NULL) {
+        return;
+    }
+    if (root->left) {
         deleteAll(root->left);
     }
-    if (root->right)
-    {
+    if (root->right) {
         deleteAll(root->right);
     }
     free(root);
 }
 
-struct Node *initRBTree()
-{
-    struct Node * tmp = NULL;
+struct Node *initRBTree() {
+    struct Node *tmp = NULL;
     // strcpy(tmp->key.name, "");
     // tmp->key.qtype = A;
     // tmp->left = NULL;

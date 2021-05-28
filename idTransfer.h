@@ -1,3 +1,5 @@
+#ifndef IDTRANSFER_H
+#define IDTRANSFER_H
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,3 +18,4 @@ typedef struct idMap {
 IdMap *initIdMap();
 IdMap getIdMap(IdMap *idMap, uint16_t i);
 int setIdMap(IdMap *idMap, IdMap item, uint16_t curMaxId);
+#endif
