@@ -1,7 +1,7 @@
 #include "loadConfig.h"
 #include <ws2tcpip.h>
 
-void loadConfig(struct Node *rbTree)
+void loadConfig(struct Node **rbTree)
 {
     FILE *file = fopen("config.txt", "r");
     char buf[MAX_BUF_LEN];
@@ -17,9 +17,9 @@ void loadConfig(struct Node *rbTree)
             char buf2[MAX_BUF_LEN];
             char *bufs[] = {buf1, buf2};
             int flag = 0;
-            int j = 0;
+            int i = 0, j = 0;
             int flag_v6 = 0;
-            for (int i = 0; i < strlen(buf); i++)
+            for (i = 0; i < strlen(buf); i++)
             {
                 if (buf[i] != ' ' && buf[i] != '#' && buf[i] != '\n')
                 {
@@ -41,6 +41,7 @@ void loadConfig(struct Node *rbTree)
                     flag_v6 = 1;
                 }
             }
+            bufs[flag][i - j] = 0;
             Key key;
             if (flag_v6)
             {
@@ -60,7 +61,23 @@ void loadConfig(struct Node *rbTree)
                 record.rdata = (char *)malloc(sizeof(uint16_t) * 8);
                 struct in6_addr ipv6data;
                 inet_pton(AF_INET6, buf1, &ipv6data);
-                strcpy(record.rdata, (char *)ipv6data.u.Byte);
+                int flag_nxdomain = 1;
+                for (int i = 0; i < 16; i++)
+                {
+                    if (*((char *)(ipv6data.u.Byte + i)) != 0)
+                    {
+                        flag_nxdomain = 0;
+                        break;
+                    }
+                }
+                if (flag_nxdomain)
+                {
+                    record.rdata = NULL;
+                }
+                else
+                {
+                    memcpy(record.rdata, ipv6data.u.Byte, sizeof(uint16_t) * 8);
+                }
                 record.rdataLength = sizeof(uint16_t) * 8;
             }
             else
@@ -68,13 +85,22 @@ void loadConfig(struct Node *rbTree)
                 record.rdata = (char *)malloc(sizeof(uint16_t) * 4);
                 struct in_addr ipv4data;
                 inet_pton(AF_INET, buf1, &ipv4data);
-                strcpy(record.rdata, (char *)ipv4data.S_un.S_addr);
-                record.rdataLength = sizeof(uint16_t) * 8;
+                if (ipv4data.S_un.S_addr == 0)
+                {
+                    record.rdata = NULL;
+                }
+                else
+                {
+                    memcpy(record.rdata, &ipv4data.S_un.S_addr, sizeof(int));
+                }
+                record.rdataLength = sizeof(uint16_t) * 4;
             }
+            record.name = (char *)malloc(sizeof(char) * strlen(buf2));
             strcpy(record.name, buf2);
+            record.rclass = DNS_IN;
             myData.record = record;
             myData.time = 0;
-            RB_insert(rbTree, key, myData);
+            *rbTree = RB_insert(*rbTree, key, myData);
         }
     }
 }

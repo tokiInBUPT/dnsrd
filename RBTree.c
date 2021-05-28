@@ -368,6 +368,12 @@ void deleteAll(struct Node *root)
 
 struct Node *initRBTree()
 {
-    struct Node * tmp;
+    struct Node * tmp = NULL;
+    // strcpy(tmp->key.name, "");
+    // tmp->key.qtype = A;
+    // tmp->left = NULL;
+    // tmp->right = NULL;
+    // tmp->parent = NULL;
+    // tmp->color = BLACK;
     return tmp;
 }
