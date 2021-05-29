@@ -1,7 +1,7 @@
 #include "handler.h"
-#include "DNSPacket.h"
 #include "RBTree.h"
 #include "cli.h"
+#include "config.h"
 #include "idTransfer.h"
 #include <WS2tcpip.h>
 #include <WinSock2.h>
@@ -25,14 +25,15 @@ void initSocket(DNSRD_RUNTIME *runtime) {
     runtime->client = socket(AF_INET, SOCK_DGRAM, 0);
     runtime->upstreamAddr.sin_family = AF_INET;
     inet_pton(AF_INET, runtime->config.upstream, &runtime->upstreamAddr.sin_addr);
-    runtime->listenAddr.sin_port = htons(53);
+    uint16_t upstreamPort = 53;
+    runtime->upstreamAddr.sin_port = htons(upstreamPort);
 }
 /*
  * 通用接收函数
  */
-DNSPacket recvDNSPacket(DNSRD_RUNTIME *runtime, Buffer *buffer, struct sockaddr_in *clientAddr, int *error) {
+DNSPacket recvDNSPacket(DNSRD_RUNTIME *runtime, SOCKET socket, Buffer *buffer, struct sockaddr_in *clientAddr, int *error) {
     int clientAddrLength = sizeof(*clientAddr);
-    int ret = recvfrom(runtime->server, (char *)buffer->data, buffer->length, 0, (struct sockaddr *)clientAddr, &clientAddrLength);
+    int ret = recvfrom(socket, (char *)buffer->data, buffer->length, 0, (struct sockaddr *)clientAddr, &clientAddrLength);
     if (ret < 0) {
         printf("Error: recvfrom %d\n", WSAGetLastError());
         *error = -1;
@@ -49,12 +50,25 @@ DNSPacket recvDNSPacket(DNSRD_RUNTIME *runtime, Buffer *buffer, struct sockaddr_
     *error = ret;
     DNSPacket packet = DNSPacket_decode(*buffer);
     if (runtime->config.debug) {
-        char clientIp[16];
-        inet_ntop(AF_INET, &clientAddr->sin_addr, clientIp, sizeof(clientIp));
-        printf("C>> Received packet from client %s\n", clientIp);
+        if (socket == runtime->server) {
+            char clientIp[16];
+            inet_ntop(AF_INET, &clientAddr->sin_addr, clientIp, sizeof(clientIp));
+            printf("C>> Received packet from client %s:%d\n", clientIp, ntohs(clientAddr->sin_port));
+        } else {
+            printf("S>> Received packet from upstream\n");
+        }
         DNSPacket_print(&packet);
     }
     return packet;
+}
+/*
+ * 判断是否可以缓存
+ */
+int checkCacheable(DNSQType type) {
+    if (type == A || type == AAAA || type == CNAME || type == PTR || type == NS || type == TXT) {
+        return 1;
+    }
+    return 0;
 }
 /*
  * 接收客户端的查询请求
@@ -63,16 +77,60 @@ void recvFromClient(DNSRD_RUNTIME *runtime) {
     Buffer buffer = makeBuffer(512);
     struct sockaddr_in clientAddr;
     int status = 0;
-    DNSPacket packet = recvDNSPacket(runtime, &buffer, &clientAddr, &status);
+    DNSPacket packet = recvDNSPacket(runtime, runtime->server, &buffer, &clientAddr, &status);
+    // 解析后原数据就已经不需要了
+    free(buffer.data);
+    // 不合法的查询包不作处理
+    if (packet.header.qr != QRQUERY || packet.header.questionCount < 1) {
+        DNSPacket_destroy(packet);
+        return;
+    }
+    /*
+     * 由于多个question会产生歧义，且查阅到开源DNS系统Bind也不支持多个question
+     * 故直接对多个question的DNS包做返回格式错误处理
+     * ref: https://gitlab.isc.org/isc-projects/bind9/-/blob/main/lib/ns/query.c#L11977-11983
+     */
+    if (packet.header.questionCount > 1) {
+        if (runtime->config.debug) {
+            printf("Too many questions. \n");
+        }
+        packet.header.qr = QRRESPONSE;
+        packet.header.rcode = FORMERR;
+        buffer = DNSPacket_encode(packet);
+        DNSPacket_destroy(packet);
+        sendto(runtime->server, (char *)buffer.data, buffer.length, 0, (struct sockaddr *)&clientAddr, sizeof(clientAddr));
+        return;
+    }
+    // 若能查询先查询本地缓存
+    if (checkCacheable(packet.questions->qtype)) {
+    }
+    // 缓存未命中或者不支持，转走
+    // ID转换
+    IdMap mapItem;
+    mapItem.addr = clientAddr;
+    mapItem.originalId = packet.header.id;
+    mapItem.time = time(NULL) + IDMAP_TIMEOUT;
+    runtime->maxId = setIdMap(runtime->idmap, mapItem, runtime->maxId);
+    packet.header.id = runtime->maxId;
+    // 发走
+    if (runtime->config.debug) {
+        printf("S<< Send packet to upstream\n");
+        DNSPacket_print(&packet);
+    }
+    buffer = DNSPacket_encode(packet);
+    DNSPacket_destroy(packet);
+    status = sendto(runtime->client, (char *)buffer.data, buffer.length, 0, (struct sockaddr *)&runtime->upstreamAddr, sizeof(runtime->upstreamAddr));
+    if (status < 0) {
+        printf("Error sendto: %d\n", WSAGetLastError());
+    }
 }
 /*
  * 接收上游应答
  */
 void recvFromUpstream(DNSRD_RUNTIME *runtime) {
     Buffer buffer = makeBuffer(512);
-    struct sockaddr_in clientAddr;
     int status = 0;
-    DNSPacket packet = recvDNSPacket(runtime, &buffer, &clientAddr, &status);
+    DNSPacket packet = recvDNSPacket(runtime, runtime->client, &buffer, &runtime->upstreamAddr, &status);
 }
 /*
  * 主循环

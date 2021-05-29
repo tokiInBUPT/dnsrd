@@ -14,6 +14,7 @@ typedef struct DNSRD_RUNTIME {
     SOCKET server;
     SOCKET client;
     IdMap *idmap;
+    uint16_t maxId;
     struct Node *rbtree;
     struct sockaddr_in listenAddr;
     struct sockaddr_in upstreamAddr;
@@ -24,5 +25,5 @@ DNSRD_RUNTIME initRuntime(DNSRD_CONFIG *config);
 void destroyRuntime(DNSRD_RUNTIME *runtime);
 void cliHelp();
 void cliHead();
-void cliStarted();
+void cliStarted(DNSRD_CONFIG *config);
 #endif

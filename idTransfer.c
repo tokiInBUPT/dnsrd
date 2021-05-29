@@ -15,10 +15,8 @@ IdMap getIdMap(IdMap *idMap, uint16_t i) {
 
 int setIdMap(IdMap *idMap, IdMap item, uint16_t curMaxId) {
     uint16_t originId = curMaxId;
-    time_t t;
-    t = time(NULL);
-    time_t ii = time(&t);
-    while (idMap[curMaxId].time >= ii) {
+    time_t t = time(NULL);
+    while (idMap[curMaxId].time >= t) {
         curMaxId++;
         if (curMaxId == originId) {
             return -1;

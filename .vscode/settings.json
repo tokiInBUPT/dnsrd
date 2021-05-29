@@ -10,6 +10,7 @@
         "winsock2.h": "c",
         "dnspacket.h": "c",
         "rbtree.h": "c",
-        "getopt.h": "c"
+        "getopt.h": "c",
+        "idtransfer.h": "c"
     }
 }

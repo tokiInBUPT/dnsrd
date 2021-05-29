@@ -25,7 +25,7 @@ DNSRD_CONFIG initConfig(int argc, char *argv[]) {
             strcpy_s(config.hostfile, 255, optarg);
             break;
         case 'u':
-            strcpy_s(config.upstream, 15, optarg);
+            strcpy_s(config.upstream, 16, optarg);
             break;
         case 'p':
             config.port = atoi(optarg);
@@ -55,6 +55,7 @@ DNSRD_RUNTIME initRuntime(DNSRD_CONFIG *config) {
     runtime.quit = 0;
     runtime.config = *config;
     runtime.idmap = initIdMap();
+    runtime.maxId = 0;
     runtime.rbtree = NULL;
     loadConfig(config->hostfile, &runtime.rbtree);
     return runtime;

@@ -98,7 +98,8 @@ typedef enum {
     MX = 0x0F,
     TXT = 0x10,
     AAAA = 0x1c,
-    ANY = 0xFF
+    ANY = 0xFF,
+    OPT = 41
 } DNSQType;
 
 /* 目前其它选项基本已经排除 */

@@ -1,4 +1,5 @@
 #include "DNSPacket.h"
+#include <WS2tcpip.h>
 #include <WinSock2.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -45,7 +46,8 @@ int toQname(char *str, char *newStr) {
 int fromQname(char *str, char *newStr) {
     int len = (int)strlen(str);
     if (len <= 0) {
-        return 0;
+        newStr[0] = '\0';
+        return 1;
     }
     int dot = 0;
     for (int i = 0; i <= len; i++) {
@@ -78,9 +80,8 @@ Buffer makeBuffer(int len) {
     return buffer;
 }
 Buffer DNSPacket_encode(DNSPacket packet) {
-    Buffer buffer;
-    uint8_t *data = (uint8_t *)malloc(512 * sizeof(uint8_t));
-    buffer.data = data;
+    Buffer buffer = makeBuffer(512);
+    uint8_t *data = buffer.data;
     /* Header */
     data = _write16(data, packet.header.id);
     /* QR+OP+AA+TC+RD */
@@ -285,7 +286,6 @@ void DNSPacket_fillQuery(DNSPacket *packet) {
     packet->additional = NULL;
 }
 void DNSPacket_print(DNSPacket *packet) {
-    printf("\nPACKET INFORMATION:\n");
     printf("Transaction ID: 0x%04x\n", packet->header.id);
     printf(packet->header.qr == QRQUERY ? "Response: Message is a query\n" : "Response: Message is a response\n");
     switch (packet->header.opcode) {
@@ -417,6 +417,7 @@ void DNSPacket_print(DNSPacket *packet) {
         printf("\tClass: IN (0x0001)\n");
         printf("\tTime to live: %d\n", packet->answers[i].ttl);
         printf("\tData length: %d\n", packet->answers[i].rdataLength);
+        char res[256];
         switch (packet->answers[i].type) {
         case A:
             // printf("\tAddress: %d.%d.%d.%d\n",
@@ -424,10 +425,9 @@ void DNSPacket_print(DNSPacket *packet) {
             //        (unsigned char)*(packet->answers[i].rdata + 1),
             //        (unsigned char)*(packet->answers[i].rdata + 2),
             //        (unsigned char)*(packet->answers[i].rdata + 3));
-            char ip[256];
             // 不知道对不对，没法测，先写着
-            inet_ntop(AF_INET, packet->answers[i].rdata, ip, 256);
-            printf("\tAddress: %s\n", ip);
+            inet_ntop(AF_INET, packet->answers[i].rdata, res, 256);
+            printf("\tAddress: %s\n", res);
             break;
         case AAAA:
             // printf("\tAAAA Address: %x%02x:%x%02x:%x%02x:%x%02x:%x%02x:%x%02x:%x%02x:%x%02x\n",
@@ -447,33 +447,28 @@ void DNSPacket_print(DNSPacket *packet) {
             //        (unsigned char)*((unsigned char *)packet->answers[i].rdata + 13),
             //        (unsigned char)*((unsigned char *)packet->answers[i].rdata + 14),
             //        (unsigned char)*((unsigned char *)packet->answers[i].rdata + 15));
-            char ip[256];
             // 不知道对不对，没法测，先写着
-            inet_ntop(AF_INET6, packet->answers[i].rdata, ip, 256);
-            printf("\tAAAA Address: %s\n", ip);
+            inet_ntop(AF_INET6, packet->answers[i].rdata, res, 256);
+            printf("\tAAAA Address: %s\n", res);
             break;
         case CNAME:
-            char domain[256];
-            fromQname(packet->answers[i].rdata, domain);
-            printf("\tCNAME: %s\n", domain);
+            fromQname(packet->answers[i].rdata, res);
+            printf("\tCNAME: %s\n", res);
             break;
         case NS:
-            char domain[256];
-            fromQname(packet->answers[i].rdata, domain);
-            printf("\tNS: %s\n", domain);
+            fromQname(packet->answers[i].rdata, res);
+            printf("\tNS: %s\n", res);
             break;
         case PTR:
-            char domain[256];
-            fromQname(packet->answers[i].rdata, domain);
-            printf("\tPTR: %s\n", domain);
+            fromQname(packet->answers[i].rdata, res);
+            printf("\tPTR: %s\n", res);
             break;
         case TXT:
             printf("\tTXT: %s\n", packet->answers[i].rdata);
             break;
         default:
             printf("\tNot A or AAAA or CNAME: ");
-            for (int i = 0; i < packet->answers[i].rdataLength; i++)
-            {
+            for (int i = 0; i < packet->answers[i].rdataLength; i++) {
                 printf("%x", packet->answers[i].rdata[i]);
             }
             printf("\n");
