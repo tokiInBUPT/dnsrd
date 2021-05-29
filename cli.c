@@ -52,17 +52,35 @@ DNSRD_CONFIG initConfig(int argc, char *argv[]) {
 }
 DNSRD_RUNTIME initRuntime(DNSRD_CONFIG *config) {
     DNSRD_RUNTIME runtime;
+    runtime.quit = 0;
+    runtime.config = *config;
     runtime.idmap = initIdMap();
     runtime.rbtree = NULL;
     loadConfig(config->hostfile, &runtime.rbtree);
     return runtime;
 }
 void destroyRuntime(DNSRD_RUNTIME *runtime) {
+    if (runtime->quit > 0) {
+        // 退出已经处理完成了，无需再处理
+        return;
+    }
+    runtime->quit = 1;
+    closesocket(runtime->server);
+    closesocket(runtime->client);
     free(runtime->idmap);
     deleteAll(runtime->rbtree);
 }
-void cliHelp() {
+void cliHead() {
     printf("DNSRD Project v1.0 by xyToki&Jray&cn_zyk 2021.5\n");
+}
+void cliStarted(DNSRD_CONFIG *config) {
+    printf("Listening on 0.0.0.0:%d with upstream %s", config->port, config->upstream);
+    if(config->debug){
+        printf(" and DEBUG ENABLED");
+    }
+    printf("\n");
+}
+void cliHelp() {
     printf("Usage: dnsrd -u <upstream> [-f <hostfile>] [-p <port>] [-d] [-h]\n");
     printf("       -u upstream    IP of upstream dns server. e.g. 1.1.1.1\n");
     printf("       -f hostfile    Path to host file. e.g. hosts.txt \n");

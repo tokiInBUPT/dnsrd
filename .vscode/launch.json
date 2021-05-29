@@ -9,7 +9,7 @@
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${command:cmake.launchTargetPath}",
-            "args": ["-u", "10.3.9.44", "-f", "hosts.txt"],
+            "args": ["-u", "10.3.9.44", "-f", "hosts.txt", "-d"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],

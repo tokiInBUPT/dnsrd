@@ -27,6 +27,7 @@ int compareKey(Key a, Key b, int greaterOrlower) // greater 1, equal 0, lower -1
         break;
 
     default:
+        return 0;
         break;
     }
 }
