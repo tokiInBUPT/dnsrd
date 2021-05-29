@@ -457,8 +457,23 @@ void DNSPacket_print(DNSPacket *packet) {
             fromQname(packet->answers[i].rdata, domain);
             printf("\tCNAME: %s\n", domain);
             break;
+        case NS:
+            char domain[256];
+            fromQname(packet->answers[i].rdata, domain);
+            printf("\tNS: %s\n", domain);
+            break;
+        case PTR:
+            char domain[256];
+            fromQname(packet->answers[i].rdata, domain);
+            printf("\tPTR: %s\n", domain);
+            break;
         default:
-            printf("Not A or AAAA or CNAME\n");
+            printf("\tNot A or AAAA or CNAME: ");
+            for (int i = 0; i < packet->answers[i].rdataLength; i++)
+            {
+                printf("%x", packet->answers[i].rdata[i]);
+            }
+            printf("\n");
         }
     }
     printf("\n");
