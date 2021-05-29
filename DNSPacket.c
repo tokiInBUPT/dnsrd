@@ -71,9 +71,9 @@ int decodeQname(char *ptr, char *start, char *newStr) {
         return fromQname(ptr, newStr);
     }
 }
-Buffer makeBuffer(int len){
+Buffer makeBuffer(int len) {
     Buffer buffer;
-    uint8_t *data = (uint8_t *)malloc(len * sizeof(uint8_t));
+    buffer.data = (uint8_t *)malloc(len * sizeof(uint8_t));
     buffer.length = len;
     return buffer;
 }
@@ -196,7 +196,7 @@ DNSPacket DNSPacket_decode(Buffer buffer) {
         for (int i = 0; i < packet.header.authorityCount; i++) {
             DNSRecord *r = &packet.authorities[i];
             r->name = (char *)malloc(sizeof(char) * 256);
-            data += decodeQname((char *)data, (char*)buffer.data, r->name);
+            data += decodeQname((char *)data, (char *)buffer.data, r->name);
             uint16_t tmp;
             data = _read16(data, &tmp);
             r->type = (DNSQType)tmp;
@@ -284,6 +284,5 @@ void DNSPacket_fillQuery(DNSPacket *packet) {
     packet->authorities = NULL;
     packet->additional = NULL;
 }
-void DNSPacket_print(DNSPacket *packet){
-    
+void DNSPacket_print(DNSPacket *packet) {
 }

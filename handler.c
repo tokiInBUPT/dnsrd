@@ -17,7 +17,7 @@ void initSocket(DNSRD_RUNTIME *runtime) {
     runtime->listenAddr.sin_family = AF_INET;
     runtime->listenAddr.sin_addr.s_addr = INADDR_ANY;
     runtime->listenAddr.sin_port = htons(runtime->config.port);
-    if (bind(runtime->server, (SOCKADDR *)&runtime->listenAddr, sizeof(runtime->listenAddr)) < 0) {
+    if (bind(runtime->server, (struct sockaddr *)&runtime->listenAddr, sizeof(runtime->listenAddr)) < 0) {
         printf("ERROR: bind faild: %d\n", errno);
         exit(-1);
     }
@@ -28,19 +28,52 @@ void initSocket(DNSRD_RUNTIME *runtime) {
     runtime->listenAddr.sin_port = htons(53);
 }
 /*
+ * 通用接收函数
+ */
+DNSPacket recvDNSPacket(DNSRD_RUNTIME *runtime, Buffer *buffer, struct sockaddr_in *clientAddr, int *error) {
+    int clientAddrLength = sizeof(*clientAddr);
+    int ret = recvfrom(runtime->server, (char *)buffer->data, buffer->length, 0, (struct sockaddr *)clientAddr, &clientAddrLength);
+    if (ret < 0) {
+        printf("Error: recvfrom %d\n", WSAGetLastError());
+        *error = -1;
+        DNSPacket packet;
+        packet.answers = NULL;
+        return packet;
+    } else if (ret == 0) {
+        *error = 0;
+        DNSPacket packet;
+        packet.answers = NULL;
+        return packet;
+    }
+    buffer->length = ret;
+    *error = ret;
+    DNSPacket packet = DNSPacket_decode(*buffer);
+    if (runtime->config.debug) {
+        char clientIp[16];
+        inet_ntop(AF_INET, &clientAddr->sin_addr, clientIp, sizeof(clientIp));
+        printf("C>> Received packet from client %s\n", clientIp);
+        DNSPacket_print(&packet);
+    }
+    return packet;
+}
+/*
  * 接收客户端的查询请求
  */
 void recvFromClient(DNSRD_RUNTIME *runtime) {
     Buffer buffer = makeBuffer(512);
     struct sockaddr_in clientAddr;
-    int clientAddrLength = 0;
-    buffer.length = recvfrom(runtime->server, (char *)buffer.data, buffer.length, 0, (struct sockaddr *)&clientAddr, &clientAddrLength);
-    DNSPacket packet = DNSPacket_decode(buffer);
+    int status = 0;
+    DNSPacket packet = recvDNSPacket(runtime, &buffer, &clientAddr, &status);
 }
 /*
  * 接收上游应答
  */
-void recvFromUpstream(DNSRD_RUNTIME *runtime) {}
+void recvFromUpstream(DNSRD_RUNTIME *runtime) {
+    Buffer buffer = makeBuffer(512);
+    struct sockaddr_in clientAddr;
+    int status = 0;
+    DNSPacket packet = recvDNSPacket(runtime, &buffer, &clientAddr, &status);
+}
 /*
  * 主循环
  */
