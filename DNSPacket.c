@@ -237,26 +237,41 @@ DNSPacket DNSPacket_decode(Buffer buffer) {
 }
 void DNSPacket_destroy(DNSPacket packet) {
     for (int i = 0; i < packet.header.questionCount; i++) {
+        if (packet.questions[i].name == NULL) {
+            continue;
+        }
         free(packet.questions[i].name);
         packet.questions[i].name = NULL;
     }
     for (int i = 0; i < packet.header.answerCount; i++) {
-        free(packet.answers[i].name);
-        free(packet.answers[i].rdata);
-        packet.answers[i].name = NULL;
-        packet.answers[i].rdata = NULL;
+        if (packet.answers[i].name != NULL) {
+            free(packet.answers[i].name);
+            packet.answers[i].name = NULL;
+        }
+        if (packet.answers[i].rdata != NULL) {
+            free(packet.answers[i].rdata);
+            packet.answers[i].rdata = NULL;
+        }
     }
     for (int i = 0; i < packet.header.authorityCount; i++) {
-        free(packet.authorities[i].name);
-        free(packet.authorities[i].rdata);
-        packet.authorities[i].name = NULL;
-        packet.authorities[i].rdata = NULL;
+        if (packet.authorities[i].name != NULL) {
+            free(packet.authorities[i].name);
+            packet.authorities[i].name = NULL;
+        }
+        if (packet.authorities[i].rdata != NULL) {
+            free(packet.authorities[i].rdata);
+            packet.authorities[i].rdata = NULL;
+        }
     }
     for (int i = 0; i < packet.header.additionalCount; i++) {
-        free(packet.additional[i].name);
-        free(packet.additional[i].rdata);
-        packet.additional[i].name = NULL;
-        packet.additional[i].rdata = NULL;
+        if (packet.additional[i].name != NULL) {
+            free(packet.additional[i].name);
+            packet.additional[i].name = NULL;
+        }
+        if (packet.additional[i].rdata != NULL) {
+            free(packet.additional[i].rdata);
+            packet.additional[i].rdata = NULL;
+        }
     }
     free(packet.answers);
     free(packet.questions);
