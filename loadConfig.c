@@ -72,7 +72,9 @@ void loadConfig(char *fname, struct Node **rbTree) {
             record.name = (char *)malloc(sizeof(char) * strlen(buf2));
             strcpy(record.name, buf2);
             record.rclass = DNS_IN;
-            myData.record = record;
+            myData.answerCount = 1;
+            myData.answers = (DNSRecord *)malloc(sizeof(DNSRecord));
+            *myData.answers = record;
             myData.time = 0;
             *rbTree = RB_insert(*rbTree, key, myData);
         }

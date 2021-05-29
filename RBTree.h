@@ -13,7 +13,8 @@ enum type {
 
 typedef struct MyData {
     uint32_t time;
-    DNSRecord record;
+    uint32_t answerCount;
+    DNSRecord *answers;
 } MyData;
 
 typedef struct Key {

@@ -298,6 +298,10 @@ struct Node *RB_delete(struct Node *T, struct Node *z) {
 
     if (yoc == BLACK)
         RB_delete_fixup(&T, &x);
+    for (int i = 0; i < z->myData.answerCount; i++)
+    {
+        free(&z->myData.answers[i]);
+    }
     free(z);
     return T;
 }
@@ -321,6 +325,10 @@ void deleteAll(struct Node *root) {
     }
     if (root->right) {
         deleteAll(root->right);
+    }
+    for (int i = 0; i < root->myData.answerCount; i++)
+    {
+        free(&root->myData.answers[i]);
     }
     free(root);
 }
