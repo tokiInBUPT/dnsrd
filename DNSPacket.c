@@ -285,4 +285,173 @@ void DNSPacket_fillQuery(DNSPacket *packet) {
     packet->additional = NULL;
 }
 void DNSPacket_print(DNSPacket *packet) {
+    printf("\nPACKET INFORMATION:\n");
+    printf("Transaction ID: 0x%04x\n", packet->header.id);
+    printf(packet->header.qr == QRQUERY ? "Response: Message is a query\n" : "Response: Message is a response\n");
+    switch (packet->header.opcode) {
+    case QUERY:
+        printf("Opcode: Standard query (0)\n");
+        break;
+
+    case IQUERY:
+        printf("Opcode: Inverse query (1)\n");
+        break;
+
+    case STATUS:
+        printf("Opcode: Server status request (2)\n");
+        break;
+
+    default:
+        break;
+    }
+    if (packet->header.qr == QRRESPONSE) {
+        printf(packet->header.aa ? "Authoritative: Server is an authority for domain\n" : "Authoritative: Server is not an authority for domain\n");
+    }
+    printf(packet->header.tc ? "Truncated: Message is truncated\n" : "Truncated: Message is not truncated\n");
+    printf(packet->header.rd ? "Recursion desired: Do query recursively\n" : "Recursion desired: Do not query recursively\n");
+    if (packet->header.qr == QRRESPONSE) {
+        printf(packet->header.ra ? "Recursion available: Server can do recursive queries\n" : "Recursion available: Server can not do recursive queries\n");
+        switch (packet->header.rcode) {
+        case OK:
+            printf("Reply code: No error (0)\n");
+            break;
+        case FORMERR:
+            printf("Reply code: Format error (1)\n");
+            break;
+        case SERVFAIL:
+            printf("Reply code: Server failure (2)\n");
+            break;
+        case NXDOMAIN:
+            printf("Reply code: Name Error (3)\n");
+            break;
+        case NOTIMP:
+            printf("Reply code: Not Implemented (4)\n");
+            break;
+        case REFUSED:
+            printf("Reply code: Refused (5)\n");
+            break;
+        default:
+            break;
+        }
+    }
+    printf("Questions: %d\n", packet->header.questionCount);
+    printf("Answer RRs: %d\n", packet->header.answerCount);
+    printf("Authority RRs: %d\n", packet->header.authorityCount);
+    printf("Additional RRs: %d\n", packet->header.additionalCount);
+    for (int i = 0; i < packet->header.questionCount; i++) {
+        printf("Question %d:\n", i + 1);
+        printf("\tName: %s\n", packet->questions[i].name);
+        switch (packet->questions[i].qtype) {
+        case A:
+            printf("\tType: A (1)\n");
+            break;
+        case NS:
+            printf("\tType: NS (2)\n");
+            break;
+        case CNAME:
+            printf("\tType: CNAME (5)\n");
+            break;
+        case SOA:
+            printf("\tType: SOA (6)\n");
+            break;
+        case NUL:
+            printf("\tType: NUL (10)\n");
+            break;
+        case PTR:
+            printf("\tType: PTR (12)\n");
+            break;
+        case MX:
+            printf("\tType: MX (15)\n");
+            break;
+        case TXT:
+            printf("\tType: TXT (16)\n");
+            break;
+        case AAAA:
+            printf("\tType: AAAA (28)\n");
+            break;
+        case ANY:
+            printf("\tType: ANY (255)\n");
+            break;
+        default:
+            break;
+        }
+        printf("\tClass: IN (0x0001)\n");
+    }
+    for (int i = 0; i < packet->header.answerCount; i++) {
+        printf("Answer %d:\n", i + 1);
+        printf("\tName: %s\n", packet->answers[i].name);
+        switch (packet->answers[i].type) {
+        case A:
+            printf("\tType: A (1)\n");
+            break;
+        case NS:
+            printf("\tType: NS (2)\n");
+            break;
+        case CNAME:
+            printf("\tType: CNAME (5)\n");
+            break;
+        case SOA:
+            printf("\tType: SOA (6)\n");
+            break;
+        case NUL:
+            printf("\tType: NUL (10)\n");
+            break;
+        case PTR:
+            printf("\tType: PTR (12)\n");
+            break;
+        case MX:
+            printf("\tType: MX (15)\n");
+            break;
+        case TXT:
+            printf("\tType: TXT (16)\n");
+            break;
+        case AAAA:
+            printf("\tType: AAAA (28)\n");
+            break;
+        case ANY:
+            printf("\tType: ANY (255)\n");
+            break;
+        default:
+            break;
+        }
+        printf("\tClass: IN (0x0001)\n");
+        printf("\tTime to live: %d\n", packet->answers[i].ttl);
+        printf("\tData length: %d\n", packet->answers[i].rdataLength);
+        switch (packet->answers[i].type) {
+        case A:
+            printf("\tAddress: %d.%d.%d.%d\n",
+                   (unsigned char)*(packet->answers[i].rdata),
+                   (unsigned char)*(packet->answers[i].rdata + 1),
+                   (unsigned char)*(packet->answers[i].rdata + 2),
+                   (unsigned char)*(packet->answers[i].rdata + 3));
+            break;
+        case AAAA:
+            printf("\tAAAA Address: %x%02x:%x%02x:%x%02x:%x%02x:%x%02x:%x%02x:%x%02x:%x%02x\n",
+                   (unsigned char)*((unsigned char *)packet->answers[i].rdata),
+                   (unsigned char)*((unsigned char *)packet->answers[i].rdata + 1),
+                   (unsigned char)*((unsigned char *)packet->answers[i].rdata + 2),
+                   (unsigned char)*((unsigned char *)packet->answers[i].rdata + 3),
+                   (unsigned char)*((unsigned char *)packet->answers[i].rdata + 4),
+                   (unsigned char)*((unsigned char *)packet->answers[i].rdata + 5),
+                   (unsigned char)*((unsigned char *)packet->answers[i].rdata + 6),
+                   (unsigned char)*((unsigned char *)packet->answers[i].rdata + 7),
+                   (unsigned char)*((unsigned char *)packet->answers[i].rdata + 8),
+                   (unsigned char)*((unsigned char *)packet->answers[i].rdata + 9),
+                   (unsigned char)*((unsigned char *)packet->answers[i].rdata + 10),
+                   (unsigned char)*((unsigned char *)packet->answers[i].rdata + 11),
+                   (unsigned char)*((unsigned char *)packet->answers[i].rdata + 12),
+                   (unsigned char)*((unsigned char *)packet->answers[i].rdata + 13),
+                   (unsigned char)*((unsigned char *)packet->answers[i].rdata + 14),
+                   (unsigned char)*((unsigned char *)packet->answers[i].rdata + 15));
+            break;
+        case CNAME:
+            char domain[256];
+            fromQname(packet->answers[i].rdata, domain);
+            printf("\tCNAME: %s\n", domain);
+            break;
+        default:
+            printf("Not A or AAAA or CNAME\n");
+        }
+    }
+    printf("\n");
 }
