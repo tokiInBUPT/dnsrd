@@ -113,6 +113,8 @@ Buffer DNSPacket_encode(DNSPacket packet) {
         data = _write16(data, r->rclass);
         data = _write32(data, r->ttl);
         data = _write16(data, r->rdataLength);
+        memcpy(data, r->rdata, r->rdataLength);
+        data += r->rdataLength;
     }
     /* Authorities */
     for (int i = 0; i < packet.header.authorityCount; i++) {

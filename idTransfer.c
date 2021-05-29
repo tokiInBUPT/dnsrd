@@ -23,5 +23,5 @@ int setIdMap(IdMap *idMap, IdMap item, uint16_t curMaxId) {
         }
     }
     idMap[curMaxId] = item;
-    return curMaxId + 1;
+    return curMaxId;
 }

@@ -120,6 +120,7 @@ void recvFromClient(DNSRD_RUNTIME *runtime) {
     buffer = DNSPacket_encode(packet);
     DNSPacket_destroy(packet);
     status = sendto(runtime->client, (char *)buffer.data, buffer.length, 0, (struct sockaddr *)&runtime->upstreamAddr, sizeof(runtime->upstreamAddr));
+    free(buffer.data);
     if (status < 0) {
         printf("Error sendto: %d\n", WSAGetLastError());
     }
@@ -131,6 +132,25 @@ void recvFromUpstream(DNSRD_RUNTIME *runtime) {
     Buffer buffer = makeBuffer(512);
     int status = 0;
     DNSPacket packet = recvDNSPacket(runtime, runtime->client, &buffer, &runtime->upstreamAddr, &status);
+    // 解析后原数据就已经不需要了
+    free(buffer.data);
+    // 还原id
+    IdMap client = getIdMap(runtime->idmap, packet.header.id);
+    packet.header.id = client.originalId;
+    // 发走
+    if (runtime->config.debug) {
+        char clientIp[16];
+        inet_ntop(AF_INET, &client.addr.sin_addr, clientIp, sizeof(clientIp));
+        printf("C<< Send packet back to client %s:%d\n", clientIp, ntohs(client.addr.sin_port));
+        DNSPacket_print(&packet);
+    }
+    buffer = DNSPacket_encode(packet);
+    status = sendto(runtime->server, (char *)buffer.data, buffer.length, 0, (struct sockaddr *)&client.addr, sizeof(client.addr));
+    free(buffer.data);
+    DNSPacket_destroy(packet);
+    if (status < 0) {
+        printf("Error sendto: %d\n", WSAGetLastError());
+    }
 }
 /*
  * 主循环
