@@ -71,6 +71,12 @@ int decodeQname(char *ptr, char *start, char *newStr) {
         return fromQname(ptr, newStr);
     }
 }
+Buffer makeBuffer(int len){
+    Buffer buffer;
+    uint8_t *data = (uint8_t *)malloc(len * sizeof(uint8_t));
+    buffer.length = len;
+    return buffer;
+}
 Buffer DNSPacket_encode(DNSPacket packet) {
     Buffer buffer;
     uint8_t *data = (uint8_t *)malloc(512 * sizeof(uint8_t));
@@ -277,4 +283,7 @@ void DNSPacket_fillQuery(DNSPacket *packet) {
     packet->answers = NULL;
     packet->authorities = NULL;
     packet->additional = NULL;
+}
+void DNSPacket_print(DNSPacket *packet){
+    
 }

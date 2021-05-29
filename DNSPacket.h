@@ -135,7 +135,7 @@ typedef struct Buffer {
     uint8_t *data;
     uint32_t length;
 } Buffer;
-
+Buffer makeBuffer(int len);
 /*
  * 结构体转buffer
  */
@@ -146,15 +146,11 @@ void DNSPacket_destroy(DNSPacket packet);
  */
 DNSPacket DNSPacket_decode(Buffer buffer);
 /*
- * 复制DNS数据包，并设为新ID
- */
-DNSPacket DNSPacket_copy(DNSPacket packet, uint16_t newId);
-/*
- * 复制DNS数据包，并保留ID
- */
-// DNSPacket DNSPacket_copy(DNSPacket packet);
-/*
  * 填充发送包的基本属性
  */
 void DNSPacket_fillQuery(DNSPacket *packet);
+/*
+ * 调试输出一个DNS包的内容
+ */
+void DNSPacket_print(DNSPacket *packet);
 #endif
