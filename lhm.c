@@ -126,9 +126,15 @@ void lRUCacheFree(LRUCache *obj) {
     free(tmp);
     while (obj->head != obj->tail) {
         while (obj->head->value.answerCount--) {
-            free(obj->head->value.answers[obj->head->value.answerCount].name);
-            free(obj->head->value.answers[obj->head->value.answerCount].rdata);
-            free(obj->head->value.answers[obj->head->value.answerCount].rdataName);
+            if (obj->head->value.answers[obj->head->value.answerCount].name != NULL) {
+                free(obj->head->value.answers[obj->head->value.answerCount].name);
+            }
+            if (obj->head->value.answers[obj->head->value.answerCount].rdata != NULL) {
+                free(obj->head->value.answers[obj->head->value.answerCount].rdata);
+            }
+            if (obj->head->value.answers[obj->head->value.answerCount].rdataName != NULL) {
+                free(obj->head->value.answers[obj->head->value.answerCount].rdataName);
+            }
         }
         free(obj->head->value.answers);
         struct node *tmp = obj->head;

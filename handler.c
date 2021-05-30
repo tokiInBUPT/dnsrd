@@ -106,6 +106,8 @@ void recvFromClient(DNSRD_RUNTIME *runtime) {
         key.qtype = packet.questions->qtype;
         strcpy(key.name, packet.questions[0].name);
         MyData myData = lRUCacheGet(runtime->lruCache, key);
+        int cacheHit = 1;
+        uint32_t cacheTime = time(NULL) - myData.time;
         if (myData.answerCount > 0) {
             if (runtime->config.debug) {
                 printf("HIT CACHE\n");
@@ -113,33 +115,45 @@ void recvFromClient(DNSRD_RUNTIME *runtime) {
             packet.header.qr = QRRESPONSE;
             packet.header.answerCount = myData.answerCount;
             packet.answers = (DNSRecord *)malloc(sizeof(DNSRecord) * myData.answerCount);
-            for (int i = 0; i < myData.answerCount; i++) {
+            for (uint16_t i = 0; i < myData.answerCount; i++) {
                 if (myData.answers[i].rdata == NULL) {
                     free(packet.answers);
                     packet.answers = NULL;
                     packet.header.answerCount = 0;
+                    packet.header.rcode = NXDOMAIN;
                     break;
                 }
+                if (myData.time > 0 && cacheTime > myData.answers[i].ttl) {
+                    // 任何一个过期都算过期
+                    cacheHit = 0;
+                }
                 packet.answers[i] = myData.answers[i];
-                packet.answers[i].name = (char *)malloc(sizeof(char) * (strlen(myData.answers[i].name) + 1));
+                int nameLen = strnlen_s(myData.answers[i].name, 255);
+                packet.answers[i].name = (char *)malloc(sizeof(char) * (nameLen + 1));
                 memcpy(packet.answers[i].name, myData.answers[i].name, sizeof(char) * (strlen(myData.answers[i].name) + 1));
                 packet.answers[i].rdata = (char *)malloc(packet.answers[i].rdataLength);
                 memcpy(packet.answers[i].rdata, myData.answers[i].rdata, packet.answers[i].rdataLength);
+                packet.answers[i].ttl = myData.time > 0 ? myData.answers[i].ttl - cacheTime : 0;
+                packet.answers[i].rdataName = NULL;
             }
-            if (runtime->config.debug) {
-                char clientIp[16];
-                inet_ntop(AF_INET, &clientAddr.sin_addr, clientIp, sizeof(clientIp));
-                printf("C<< Send packet back to client %s:%d\n", clientIp, ntohs(clientAddr.sin_port));
-                DNSPacket_print(&packet);
+            if (cacheHit == 1) {
+                if (runtime->config.debug) {
+                    char clientIp[16];
+                    inet_ntop(AF_INET, &clientAddr.sin_addr, clientIp, sizeof(clientIp));
+                    printf("C<< Send packet back to client %s:%d\n", clientIp, ntohs(clientAddr.sin_port));
+                    DNSPacket_print(&packet);
+                }
+                buffer = DNSPacket_encode(packet);
+                DNSPacket_destroy(packet);
+                status = sendto(runtime->server, (char *)buffer.data, buffer.length, 0, (struct sockaddr *)&clientAddr, sizeof(runtime->upstreamAddr));
+                free(buffer.data);
+                if (status < 0) {
+                    printf("Error sendto: %d\n", WSAGetLastError());
+                }
+                return;
+            } else {
+                DNSPacket_destroy(packet);
             }
-            buffer = DNSPacket_encode(packet);
-            DNSPacket_destroy(packet);
-            status = sendto(runtime->server, (char *)buffer.data, buffer.length, 0, (struct sockaddr *)&clientAddr, sizeof(runtime->upstreamAddr));
-            free(buffer.data);
-            if (status < 0) {
-                printf("Error sendto: %d\n", WSAGetLastError());
-            }
-            return;
         }
     }
     // 缓存未命中或者不支持，转走
@@ -184,11 +198,43 @@ void recvFromUpstream(DNSRD_RUNTIME *runtime) {
     }
     buffer = DNSPacket_encode(packet);
     status = sendto(runtime->server, (char *)buffer.data, buffer.length, 0, (struct sockaddr *)&client.addr, sizeof(client.addr));
-    free(buffer.data);
-    DNSPacket_destroy(packet);
     if (status < 0) {
         printf("Error sendto: %d\n", WSAGetLastError());
     }
+    // 进缓存
+    Key cacheKey;
+    cacheKey.qtype = packet.questions->qtype;
+    strcpy_s(cacheKey.name, 255, packet.questions->name);
+    MyData cacheItem;
+    cacheItem.time = time(NULL);
+    cacheItem.answerCount = packet.header.answerCount;
+    cacheItem.answers = malloc(sizeof(DNSRecord) * packet.header.answerCount);
+    for (uint16_t i = 0; i < packet.header.answerCount; i++) {
+        DNSRecord *new = &cacheItem.answers[i];
+        DNSRecord *old = &packet.answers[i];
+        new->ttl = old->ttl;
+        new->type = old->type;
+        new->rclass = old->rclass;
+        size_t nameLen = strnlen_s(old->name, 255);
+        new->name = (char *)malloc(sizeof(char) * (nameLen + 1));
+        strcpy_s(new->name, nameLen + 1, old->name);
+        if (old->rdataName != NULL) {
+            nameLen = strnlen_s(old->rdataName, 255);
+            new->rdata = (char *)malloc(sizeof(char) * (nameLen + 2));
+            new->rdataName = (char *)malloc(sizeof(char) * (nameLen + 1));
+            strcpy_s(new->rdataName, nameLen + 1, old->rdataName);
+            toQname(old->rdataName, new->rdata);
+            new->rdataLength = (uint16_t)strnlen_s(new->rdata, 255) + 1;
+        } else {
+            new->rdataLength = old->rdataLength;
+            new->rdata = (char *)malloc(sizeof(char) * new->rdataLength);
+            memcpy(new->rdata, old->rdata, new->rdataLength);
+        }
+    }
+    lRUCachePut(runtime->lruCache, cacheKey, cacheItem);
+    // 用完销毁
+    free(buffer.data);
+    DNSPacket_destroy(packet);
 }
 /*
  * 主循环

@@ -1,6 +1,6 @@
 # Default /etc/hosts from linux
 127.0.0.1	localhost
-1.2.3.4 www.baidu.com
+1.2.3.4 www.baiduu.com
 0.0.0.0 www.google.com
 :: www.google.com
 

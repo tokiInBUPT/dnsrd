@@ -210,8 +210,10 @@ DNSPacket DNSPacket_decode(Buffer buffer) {
             case PTR: {
                 r->rdataName = (char *)malloc(sizeof(char) * r->rdataLength > 257 ? r->rdataLength : 257);
                 decodeQname((char *)data, (char *)buffer.data, r->rdataName);
+                break;
             }
             default: {
+                r->rdataName = NULL;
                 break;
             }
             }
@@ -237,6 +239,7 @@ DNSPacket DNSPacket_decode(Buffer buffer) {
             r->rdata = (char *)malloc(sizeof(char) * r->rdataLength);
             memcpy(r->rdata, data, r->rdataLength);
             data += r->rdataLength;
+            r->rdataName = NULL;
         }
     } else {
         packet.authorities = NULL;
@@ -258,6 +261,7 @@ DNSPacket DNSPacket_decode(Buffer buffer) {
             r->rdata = (char *)malloc(sizeof(char) * r->rdataLength);
             memcpy(r->rdata, data, r->rdataLength);
             data += r->rdataLength;
+            r->rdataName = NULL;
         }
     } else {
         packet.additional = NULL;
@@ -281,6 +285,10 @@ void DNSPacket_destroy(DNSPacket packet) {
             free(packet.answers[i].rdata);
             packet.answers[i].rdata = NULL;
         }
+        if (packet.answers[i].rdataName != NULL) {
+            free(packet.answers[i].rdataName);
+            packet.answers[i].rdataName = NULL;
+        }
     }
     for (int i = 0; i < packet.header.authorityCount; i++) {
         if (packet.authorities[i].name != NULL) {
@@ -291,6 +299,10 @@ void DNSPacket_destroy(DNSPacket packet) {
             free(packet.authorities[i].rdata);
             packet.authorities[i].rdata = NULL;
         }
+        if (packet.authorities[i].rdataName != NULL) {
+            free(packet.authorities[i].rdataName);
+            packet.authorities[i].rdataName = NULL;
+        }
     }
     for (int i = 0; i < packet.header.additionalCount; i++) {
         if (packet.additional[i].name != NULL) {
@@ -300,6 +312,10 @@ void DNSPacket_destroy(DNSPacket packet) {
         if (packet.additional[i].rdata != NULL) {
             free(packet.additional[i].rdata);
             packet.additional[i].rdata = NULL;
+        }
+        if (packet.additional[i].rdataName != NULL) {
+            free(packet.additional[i].rdataName);
+            packet.additional[i].rdataName = NULL;
         }
     }
     free(packet.answers);

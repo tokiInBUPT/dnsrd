@@ -155,4 +155,5 @@ void DNSPacket_fillQuery(DNSPacket *packet);
  * 调试输出一个DNS包的内容
  */
 void DNSPacket_print(DNSPacket *packet);
+int toQname(char *str, char *newStr);
 #endif
