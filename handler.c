@@ -104,10 +104,10 @@ void recvFromClient(DNSRD_RUNTIME *runtime) {
     if (checkCacheable(packet.questions->qtype)) {
         Key key;
         key.qtype = packet.questions->qtype;
-        strcpy(key.name, packet.questions[0].name);
+        strcpy_s(key.name, 256, packet.questions[0].name);
         MyData myData = lRUCacheGet(runtime->lruCache, key);
         int cacheHit = 1;
-        uint32_t cacheTime = time(NULL) - myData.time;
+        uint32_t cacheTime = (uint32_t)(time(NULL) - myData.time);
         if (myData.answerCount > 0) {
             if (runtime->config.debug) {
                 printf("HIT CACHE\n");
@@ -128,7 +128,7 @@ void recvFromClient(DNSRD_RUNTIME *runtime) {
                     cacheHit = 0;
                 }
                 packet.answers[i] = myData.answers[i];
-                int nameLen = strnlen_s(myData.answers[i].name, 255);
+                size_t nameLen = strnlen_s(myData.answers[i].name, 255);
                 packet.answers[i].name = (char *)malloc(sizeof(char) * (nameLen + 1));
                 memcpy(packet.answers[i].name, myData.answers[i].name, sizeof(char) * (strlen(myData.answers[i].name) + 1));
                 packet.answers[i].rdata = (char *)malloc(packet.answers[i].rdataLength);

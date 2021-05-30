@@ -10,7 +10,7 @@
 #define MAXID 65535
 
 typedef struct idMap {
-    uint32_t time;
+    time_t time;
     uint16_t originalId;
     struct sockaddr_in addr;
 } IdMap;

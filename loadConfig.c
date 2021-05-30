@@ -36,7 +36,7 @@ void loadConfig(char *fname, LRUCache *lruCache) {
             } else {
                 key.qtype = A;
             }
-            strcpy(key.name, buf2);
+            strcpy_s(key.name, 256, buf2);
             MyData myData;
             DNSRecord record;
             record.type = key.qtype;
@@ -69,8 +69,8 @@ void loadConfig(char *fname, LRUCache *lruCache) {
                 }
                 record.rdataLength = sizeof(uint8_t) * 4;
             }
-            record.name = (char *)malloc(sizeof(char) * (strlen(buf2) + 1));
-            strcpy(record.name, buf2);
+            record.name = (char *)malloc(sizeof(char) * (strnlen_s(buf2, 255) + 1));
+            strcpy_s(record.name, strnlen_s(buf2, 255) + 1, buf2);
             record.rclass = DNS_IN;
             record.rdataName = NULL;
             myData.answerCount = 1;

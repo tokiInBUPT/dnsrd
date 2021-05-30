@@ -8,11 +8,11 @@
 
 typedef struct Key {
     DNSQType qtype;
-    char name[255];
+    char name[256];
 } Key;
 
 typedef struct MyData {
-    uint32_t time;
+    time_t time;
     uint32_t answerCount;
     DNSRecord *answers;
 } MyData;
