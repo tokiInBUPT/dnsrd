@@ -106,43 +106,53 @@ void recvFromClient(DNSRD_RUNTIME *runtime) {
         key.qtype = packet.questions->qtype;
         strcpy_s(key.name, 256, packet.questions[0].name);
         MyData myData = lRUCacheGet(runtime->lruCache, key);
-        int cacheHit = 1;
         uint32_t cacheTime = (uint32_t)(time(NULL) - myData.time);
         if (myData.answerCount > 0) {
+
             if (runtime->config.debug) {
                 printf("HIT CACHE\n");
             }
-            packet.header.qr = QRRESPONSE;
-            packet.header.answerCount = myData.answerCount;
-            packet.answers = (DNSRecord *)malloc(sizeof(DNSRecord) * myData.answerCount);
+            int TTLTimeout = 0;
             for (uint16_t i = 0; i < myData.answerCount; i++) {
-                if (myData.answers[i].rdata == NULL) {
-                    free(packet.answers);
-                    packet.answers = NULL;
-                    packet.header.answerCount = 0;
-                    packet.header.rcode = NXDOMAIN;
-                    break;
-                }
                 if (myData.time > 0 && cacheTime > myData.answers[i].ttl) {
                     // 任何一个过期都算过期
-                    cacheHit = 0;
+                    TTLTimeout = 1;
+                    break;
                 }
-                packet.answers[i] = myData.answers[i];
-                size_t nameLen = strnlen_s(myData.answers[i].name, 255);
-                packet.answers[i].name = (char *)malloc(sizeof(char) * (nameLen + 1));
-                memcpy(packet.answers[i].name, myData.answers[i].name, sizeof(char) * (strlen(myData.answers[i].name) + 1));
-                packet.answers[i].rdata = (char *)malloc(packet.answers[i].rdataLength);
-                memcpy(packet.answers[i].rdata, myData.answers[i].rdata, packet.answers[i].rdataLength);
-                packet.answers[i].ttl = myData.time > 0 ? myData.answers[i].ttl - cacheTime : 0;
-                packet.answers[i].rdataName = NULL;
             }
-            if (cacheHit == 1) {
+            if (!TTLTimeout) {
+                packet.header.opcode = OK;
+                packet.header.qr = QRRESPONSE;
+                packet.header.answerCount = myData.answerCount;
+                packet.answers = (DNSRecord *)malloc(sizeof(DNSRecord) * myData.answerCount);
+                for (uint16_t i = 0; i < myData.answerCount; i++) {
+                    if (myData.answers[i].rdata == NULL) {
+                        free(packet.answers);
+                        packet.answers = NULL;
+                        packet.header.answerCount = 0;
+                        packet.header.opcode = NXDOMAIN;
+                        break;
+                    }
+                    packet.answers[i] = myData.answers[i];
+                    packet.answers[i].name = (char *)malloc(sizeof(char) * (strlen(myData.answers[i].name) + 1));
+                    memcpy(packet.answers[i].name, myData.answers[i].name, sizeof(char) * (strlen(myData.answers[i].name) + 1));
+                    packet.answers[i].rdata = (char *)malloc(packet.answers[i].rdataLength);
+                    memcpy(packet.answers[i].rdata, myData.answers[i].rdata, packet.answers[i].rdataLength);
+                    packet.answers[i].ttl = myData.time > 0 ? myData.answers[i].ttl - cacheTime : 0;
+                    if (myData.answers[i].rdataName) {
+                        packet.answers[i].rdataName = (char *)malloc(sizeof(char) * (strlen(myData.answers[i].rdataName) + 1));
+                        memcpy(packet.answers[i].rdataName, myData.answers[i].rdataName, sizeof(char) * (strlen(myData.answers[i].rdataName) + 1));
+                    } else {
+                        packet.answers[i].rdataName = NULL;
+                    }
+                }
                 if (runtime->config.debug) {
                     char clientIp[16];
                     inet_ntop(AF_INET, &clientAddr.sin_addr, clientIp, sizeof(clientIp));
                     printf("C<< Send packet back to client %s:%d\n", clientIp, ntohs(clientAddr.sin_port));
                     DNSPacket_print(&packet);
                 }
+                packet.header.ra = 1;
                 buffer = DNSPacket_encode(packet);
                 DNSPacket_destroy(packet);
                 status = sendto(runtime->server, (char *)buffer.data, buffer.length, 0, (struct sockaddr *)&clientAddr, sizeof(runtime->upstreamAddr));
@@ -152,7 +162,7 @@ void recvFromClient(DNSRD_RUNTIME *runtime) {
                 }
                 return;
             } else {
-                DNSPacket_destroy(packet);
+                printf("CACHE TIMEOUT\n");
             }
         }
     }
@@ -229,6 +239,7 @@ void recvFromUpstream(DNSRD_RUNTIME *runtime) {
             new->rdataLength = old->rdataLength;
             new->rdata = (char *)malloc(sizeof(char) * new->rdataLength);
             memcpy(new->rdata, old->rdata, new->rdataLength);
+            new->rdataName = NULL;
         }
     }
     lRUCachePut(runtime->lruCache, cacheKey, cacheItem);
