@@ -1,7 +1,7 @@
 #include "loadConfig.h"
 #include <ws2tcpip.h>
 
-void loadConfig(char *fname, struct Node **rbTree) {
+void loadConfig(char *fname, LRUCache *lruCache) {
     FILE *file = fopen(fname, "r");
     char buf[MAX_BUF_LEN];
     while (fgets(buf, MAX_BUF_LEN, file) != NULL) {
@@ -15,7 +15,7 @@ void loadConfig(char *fname, struct Node **rbTree) {
             int i = 0, j = 0;
             int flag_v6 = 0;
             for (i = 0; i < strlen(buf); i++) {
-                if (buf[i] != ' ' && buf[i] != '#' && buf[i] != '\n') {
+                if (buf[i] != ' ' && buf[i] != '\t' && buf[i] != '#' && buf[i] != '\n') {
                     bufs[flag][i - j] = buf[i];
                 } else if (flag == 0) {
                     bufs[flag][i - j] = 0;
@@ -76,7 +76,7 @@ void loadConfig(char *fname, struct Node **rbTree) {
             myData.answers = (DNSRecord *)malloc(sizeof(DNSRecord));
             *myData.answers = record;
             myData.time = 0;
-            *rbTree = RB_insert(*rbTree, key, myData);
+            lRUCachePut(lruCache, key, myData);
         }
     }
 }

@@ -1,8 +1,9 @@
 #ifndef CLI_H
 #define CLI_H
-#include "RBTree.h"
 #include "idTransfer.h"
+#include "lhm.h"
 #include <WinSock2.h>
+#define MAXCACHE 65535
 typedef struct DNSRD_CONFIG {
     int debug;
     int port;
@@ -15,7 +16,7 @@ typedef struct DNSRD_RUNTIME {
     SOCKET client;
     IdMap *idmap;
     uint16_t maxId;
-    struct Node *rbtree;
+    LRUCache *lruCache;
     struct sockaddr_in listenAddr;
     struct sockaddr_in upstreamAddr;
     int quit;

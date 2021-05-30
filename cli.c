@@ -56,8 +56,8 @@ DNSRD_RUNTIME initRuntime(DNSRD_CONFIG *config) {
     runtime.config = *config;
     runtime.idmap = initIdMap();
     runtime.maxId = 0;
-    runtime.rbtree = NULL;
-    loadConfig(config->hostfile, &runtime.rbtree);
+    runtime.lruCache = lRUCacheCreate(MAXCACHE);
+    loadConfig(config->hostfile, runtime.lruCache);
     return runtime;
 }
 void destroyRuntime(DNSRD_RUNTIME *runtime) {
@@ -69,7 +69,7 @@ void destroyRuntime(DNSRD_RUNTIME *runtime) {
     closesocket(runtime->server);
     closesocket(runtime->client);
     free(runtime->idmap);
-    deleteAll(runtime->rbtree);
+    lRUCacheFree(runtime->lruCache);
 }
 void cliHead() {
     printf("DNSRD Project v1.0 by xyToki&Jray&cn_zyk 2021.5\n");

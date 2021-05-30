@@ -7,7 +7,7 @@ file(GLOB_RECURSE SRCS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
     DNSQuery.c DNSQuery.h
     idTransfer.c idTransfer.h
     loadConfig.c loadConfig.h
-    RBTree.c RBTree.h
+    lhm.c lhm.h
     cli.c cli.h
     handler.c
     handler.h

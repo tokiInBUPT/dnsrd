@@ -1,5 +1,4 @@
 #include "handler.h"
-#include "RBTree.h"
 #include "cli.h"
 #include "config.h"
 #include "idTransfer.h"
@@ -103,7 +102,7 @@ void recvFromClient(DNSRD_RUNTIME *runtime) {
     }
     // 若能查询先查询本地缓存
     if (checkCacheable(packet.questions->qtype)) {
-    }
+        }
     // 缓存未命中或者不支持，转走
     // ID转换
     IdMap mapItem;
