@@ -68,7 +68,7 @@ MyData lRUCacheGet(LRUCache *obj, Key key) {
     while (addr->next != NULL && !same_key(addr->unused->key, key)) { //寻找密钥是否存在
         addr = addr->next;
     }
-    if (same_key(addr->unused->key, key)) {             //查找成功
+    if (same_key(addr->unused->key, key)) {     //查找成功
         HeadInsertion(obj->head, addr->unused); //更新至表头
         return addr->unused->value;
     }
@@ -84,7 +84,7 @@ void lRUCachePut(LRUCache *obj, Key key, MyData value) {
             struct node *last = obj->tail->prev;                                 //最后一个数据结点
             struct hash *remove = HashMap(obj->table, last->key, obj->capacity); //舍弃结点的哈希地址
             struct hash *ptr = remove;
-            remove = remove->next;                     //跳过头结点
+            remove = remove->next;                             //跳过头结点
             while (same_key(remove->unused->key, last->key)) { //找到最久未使用的结点
                 ptr = remove;
                 remove = remove->next;
@@ -121,7 +121,20 @@ void lRUCachePut(LRUCache *obj, Key key, MyData value) {
 
 void lRUCacheFree(LRUCache *obj) {
     free(obj->table);
-    free(obj->head);
+    struct node *tmp = obj->head;
+    obj->head = obj->head->next;
+    free(tmp);
+    while (obj->head != obj->tail) {
+        while (obj->head->value.answerCount--) {
+            free(obj->head->value.answers[obj->head->value.answerCount].name);
+            free(obj->head->value.answers[obj->head->value.answerCount].rdata);
+            free(obj->head->value.answers[obj->head->value.answerCount].rdataName);
+        }
+        free(obj->head->value.answers);
+        struct node *tmp = obj->head;
+        obj->head = obj->head->next;
+        free(tmp);
+    }
     free(obj->tail);
     free(obj);
 }
