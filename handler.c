@@ -118,6 +118,7 @@ void recvFromClient(DNSRD_RUNTIME *runtime) {
                     free(packet.answers);
                     packet.answers = NULL;
                     packet.header.answerCount = 0;
+                    packet.header.rcode = NXDOMAIN;
                     break;
                 }
                 packet.answers[i] = myData.answers[i];
