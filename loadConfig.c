@@ -42,7 +42,7 @@ void loadConfig(char *fname, LRUCache *lruCache) {
             record.type = key.qtype;
             record.ttl = 0;
             if (flag_v6) {
-                record.rdata = (char *)malloc(sizeof(uint16_t) * 8);
+                record.rdata = (char *)malloc(sizeof(uint8_t) * 8);
                 struct in6_addr ipv6data;
                 inet_pton(AF_INET6, buf1, &ipv6data);
                 int flag_nxdomain = 1;
@@ -55,11 +55,11 @@ void loadConfig(char *fname, LRUCache *lruCache) {
                 if (flag_nxdomain) {
                     record.rdata = NULL;
                 } else {
-                    memcpy(record.rdata, ipv6data.u.Byte, sizeof(uint16_t) * 8);
+                    memcpy(record.rdata, ipv6data.u.Byte, sizeof(uint8_t) * 8);
                 }
-                record.rdataLength = sizeof(uint16_t) * 8;
+                record.rdataLength = sizeof(uint8_t) * 8;
             } else {
-                record.rdata = (char *)malloc(sizeof(uint16_t) * 4);
+                record.rdata = (char *)malloc(sizeof(uint8_t) * 4);
                 struct in_addr ipv4data;
                 inet_pton(AF_INET, buf1, &ipv4data);
                 if (ipv4data.S_un.S_addr == 0) {
@@ -67,9 +67,9 @@ void loadConfig(char *fname, LRUCache *lruCache) {
                 } else {
                     memcpy(record.rdata, &ipv4data.S_un.S_addr, sizeof(int));
                 }
-                record.rdataLength = sizeof(uint16_t) * 4;
+                record.rdataLength = sizeof(uint8_t) * 4;
             }
-            record.name = (char *)malloc(sizeof(char) * strlen(buf2));
+            record.name = (char *)malloc(sizeof(char) * (strlen(buf2) + 1));
             strcpy(record.name, buf2);
             record.rclass = DNS_IN;
             record.rdataName = NULL;
