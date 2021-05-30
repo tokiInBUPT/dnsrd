@@ -31,8 +31,7 @@ uint8_t *_write8(uint8_t *ptr, uint8_t value) {
 
 int toQname(char *str, char *newStr) {
     int len = (int)strlen(str);
-    if (len == 0)
-    {
+    if (len == 0) {
         strcpy(newStr, "");
         return 1;
     }
@@ -55,7 +54,7 @@ int decodeQname(char *ptr, char *start, char *newStr) {
     for (int i = 0; 1; i++) {
         if (dot == i) {
             if ((unsigned char)ptr[i] >= 0xC0) {
-                int offset = (ptr[i] << 8 | ptr[i + 1]) & 0xfff;
+                int offset = ((unsigned char)ptr[i] << 8 | (unsigned char)ptr[i + 1]) & 0xfff;
                 strcat(newStr, ".");
                 char tmpStr[257];
                 decodeQname(start + offset, start, tmpStr);
@@ -216,7 +215,7 @@ DNSPacket DNSPacket_decode(Buffer buffer) {
                 break;
             }
             }
-            data += r->rdataLength + 1;
+            data += r->rdataLength;
         }
     } else {
         packet.answers = NULL;
@@ -237,7 +236,7 @@ DNSPacket DNSPacket_decode(Buffer buffer) {
             data = _read16(data, &r->rdataLength);
             r->rdata = (char *)malloc(sizeof(char) * r->rdataLength);
             memcpy(r->rdata, data, r->rdataLength);
-            data += r->rdataLength + 1;
+            data += r->rdataLength;
         }
     } else {
         packet.authorities = NULL;
@@ -258,7 +257,7 @@ DNSPacket DNSPacket_decode(Buffer buffer) {
             data = _read16(data, &r->rdataLength);
             r->rdata = (char *)malloc(sizeof(char) * r->rdataLength);
             memcpy(r->rdata, data, r->rdataLength);
-            data += r->rdataLength + 1;
+            data += r->rdataLength;
         }
     } else {
         packet.additional = NULL;

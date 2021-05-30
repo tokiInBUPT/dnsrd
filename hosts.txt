@@ -1,5 +1,8 @@
 # Default /etc/hosts from linux
 127.0.0.1	localhost
+1.2.3.4 www.baidu.com
+0.0.0.0 www.google.com
+:: www.google.com
 
 # The following lines are desirable for IPv6 capable hosts
 ::1	ip6-localhos

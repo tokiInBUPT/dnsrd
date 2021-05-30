@@ -102,7 +102,46 @@ void recvFromClient(DNSRD_RUNTIME *runtime) {
     }
     // 若能查询先查询本地缓存
     if (checkCacheable(packet.questions->qtype)) {
+        Key key;
+        key.qtype = packet.questions->qtype;
+        strcpy(key.name, packet.questions[0].name);
+        MyData myData = lRUCacheGet(runtime->lruCache, key);
+        if (myData.answerCount > 0) {
+            if (runtime->config.debug) {
+                printf("HIT CACHE\n");
+            }
+            packet.header.qr = QRRESPONSE;
+            packet.header.answerCount = myData.answerCount;
+            packet.answers = (DNSRecord *)malloc(sizeof(DNSRecord) * myData.answerCount);
+            for (int i = 0; i < myData.answerCount; i++) {
+                if (myData.answers[i].rdata == NULL) {
+                    free(packet.answers);
+                    packet.answers = NULL;
+                    packet.header.answerCount = 0;
+                    break;
+                }
+                packet.answers[i] = myData.answers[i];
+                packet.answers[i].name = (char *)malloc(sizeof(char) * (strlen(myData.answers[i].name) + 1));
+                memcpy(packet.answers[i].name, myData.answers[i].name, sizeof(char) * (strlen(myData.answers[i].name) + 1));
+                packet.answers[i].rdata = (char *)malloc(packet.answers[i].rdataLength);
+                memcpy(packet.answers[i].rdata, myData.answers[i].rdata, packet.answers[i].rdataLength);
+            }
+            if (runtime->config.debug) {
+                char clientIp[16];
+                inet_ntop(AF_INET, &clientAddr.sin_addr, clientIp, sizeof(clientIp));
+                printf("C<< Send packet back to client %s:%d\n", clientIp, ntohs(clientAddr.sin_port));
+                DNSPacket_print(&packet);
+            }
+            buffer = DNSPacket_encode(packet);
+            DNSPacket_destroy(packet);
+            status = sendto(runtime->server, (char *)buffer.data, buffer.length, 0, (struct sockaddr *)&clientAddr, sizeof(runtime->upstreamAddr));
+            free(buffer.data);
+            if (status < 0) {
+                printf("Error sendto: %d\n", WSAGetLastError());
+            }
+            return;
         }
+    }
     // 缓存未命中或者不支持，转走
     // ID转换
     IdMap mapItem;

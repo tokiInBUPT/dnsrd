@@ -72,6 +72,7 @@ void loadConfig(char *fname, LRUCache *lruCache) {
             record.name = (char *)malloc(sizeof(char) * strlen(buf2));
             strcpy(record.name, buf2);
             record.rclass = DNS_IN;
+            record.rdataName = NULL;
             myData.answerCount = 1;
             myData.answers = (DNSRecord *)malloc(sizeof(DNSRecord));
             *myData.answers = record;
