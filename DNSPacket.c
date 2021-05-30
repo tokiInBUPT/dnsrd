@@ -62,16 +62,54 @@ int fromQname(char *str, char *newStr) {
     return len + 1;
 }
 int decodeQname(char *ptr, char *start, char *newStr) {
-    uint16_t f = ptr[0] << 8 | ptr[1];
-    if ((f & 0xc000) == 0xc000) {
-        // 数据包压缩
-        int offset = f & 0xfff;
-        ptr = start + offset;
-        fromQname(ptr, newStr);
-        return 2;
-    } else {
-        return fromQname(ptr, newStr);
+    // uint16_t f = ptr[0] << 8 | ptr[1];
+    // if ((f & 0xc000) == 0xc000) {
+    //     // 数据包压缩
+    //     int offset = f & 0xfff;
+    //     ptr = start + offset;
+    //     fromQname(ptr, newStr);
+    //     return 2;
+    // } else {
+    //     return fromQname(ptr, newStr);
+    // }
+    strcpy(newStr, "");
+    int len = 0;
+    int dot = 0;
+    for (int i = 0; 1; i++) {
+        if (dot == i) {
+            printf("%d", ptr[i]);
+            if ((unsigned char)ptr[i] >= 0xC0) {
+                int offset = (ptr[i] << 8 | ptr[i + 1]) & 0xfff;
+                strcat(newStr, start + offset);
+                len = i + 2;
+                break;
+            } else if (ptr[i] != '\0') {
+                strcat(newStr, ".");
+                dot = i + ptr[i] + 1;
+                ptr[i] = '.';
+            } else {
+                int strLength = strlen(newStr);
+                newStr[strLength] = ptr[i];
+                newStr[strLength + 1] = 0;
+                len = i + 1;
+                break;
+            }
+        } else if (ptr[i] != '\0') {
+            int strLength = strlen(newStr);
+            newStr[strLength] = ptr[i];
+            newStr[strLength + 1] = 0;
+        } else {
+            int strLength = strlen(newStr);
+            newStr[strLength] = ptr[i];
+            newStr[strLength + 1] = 0;
+            len = i + 1;
+            break;
+        }
     }
+    char tmp[256] = "";
+    strcpy(tmp, &newStr[1]);
+    strcpy(newStr, tmp);
+    return len;
 }
 Buffer makeBuffer(int len) {
     Buffer buffer;
@@ -166,7 +204,9 @@ DNSPacket DNSPacket_decode(Buffer buffer) {
     for (int i = 0; i < packet.header.questionCount; i++) {
         DNSQuestion *r = &packet.questions[i];
         r->name = (char *)malloc(sizeof(char) * 256);
+        printf("\n\n\n\n%s\n\n\n\n", data);
         data += decodeQname((char *)data, (char *)buffer.data, r->name);
+        printf("\n\n\n\n%s\n\n\n\n", data);
         uint16_t tmp;
         data = _read16(data, &tmp);
         r->qtype = (DNSQType)tmp;
@@ -189,6 +229,18 @@ DNSPacket DNSPacket_decode(Buffer buffer) {
             data = _read16(data, &r->rdataLength);
             r->rdata = (char *)malloc(sizeof(char) * r->rdataLength);
             memcpy(r->rdata, data, r->rdataLength);
+            switch (r->type) {
+            case NS:
+            case CNAME:
+            case PTR: {
+                r->rdataName = (char *)malloc(sizeof(char) * r->rdataLength > 257 ? r->rdataLength : 257);
+                decodeQname((char *)data, (char *)buffer.data, r->rdataName);
+            }
+            default: {
+                break;
+            }
+            }
+            data += r->rdataLength;
         }
     } else {
         packet.answers = NULL;
@@ -209,6 +261,7 @@ DNSPacket DNSPacket_decode(Buffer buffer) {
             data = _read16(data, &r->rdataLength);
             r->rdata = (char *)malloc(sizeof(char) * r->rdataLength);
             memcpy(r->rdata, data, r->rdataLength);
+            data += r->rdataLength;
         }
     } else {
         packet.authorities = NULL;
@@ -229,6 +282,7 @@ DNSPacket DNSPacket_decode(Buffer buffer) {
             data = _read16(data, &r->rdataLength);
             r->rdata = (char *)malloc(sizeof(char) * r->rdataLength);
             memcpy(r->rdata, data, r->rdataLength);
+            data += r->rdataLength;
         }
     } else {
         packet.additional = NULL;
@@ -469,16 +523,13 @@ void DNSPacket_print(DNSPacket *packet) {
             printf("\tAAAA Address: %s\n", res);
             break;
         case CNAME:
-            fromQname(packet->answers[i].rdata, res);
-            printf("\tCNAME: %s\n", res);
+            printf("\tCNAME: %s\n", packet->answers[i].rdataName);
             break;
         case NS:
-            fromQname(packet->answers[i].rdata, res);
-            printf("\tNS: %s\n", res);
+            printf("\tNS: %s\n", packet->answers[i].rdataName);
             break;
         case PTR:
-            fromQname(packet->answers[i].rdata, res);
-            printf("\tPTR: %s\n", res);
+            printf("\tPTR: %s\n", packet->answers[i].rdataName);
             break;
         case TXT:
             printf("\tTXT: %s\n", packet->answers[i].rdata);

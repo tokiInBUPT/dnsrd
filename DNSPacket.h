@@ -122,6 +122,7 @@ typedef struct DNSRecord {
     uint32_t ttl;
     uint16_t rdataLength;
     char *rdata;
+    char *rdataName;
 } DNSRecord;
 
 typedef struct DNSPacket {
