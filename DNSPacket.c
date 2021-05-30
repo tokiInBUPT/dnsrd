@@ -31,6 +31,11 @@ uint8_t *_write8(uint8_t *ptr, uint8_t value) {
 
 int toQname(char *str, char *newStr) {
     int len = (int)strlen(str);
+    if (len == 0)
+    {
+        strcpy(newStr, "");
+        return 1;
+    }
     newStr[0] = '.';
     strcpy(newStr + 1, str); // now newStr is like ".a.example.com"
     int dot = 0;
@@ -43,50 +48,23 @@ int toQname(char *str, char *newStr) {
     }
     return len + 2;
 }
-int fromQname(char *str, char *newStr) {
-    int len = (int)strlen(str);
-    if (len <= 0) {
-        newStr[0] = '\0';
-        return 1;
-    }
-    int dot = 0;
-    for (int i = 0; i <= len; i++) {
-        if (i == dot) {
-            dot = i + str[i] + 1;
-            if (str[i] > 0) {
-                str[i] = '.';
-            }
-        }
-    }
-    strcpy(newStr, str + 1);
-    return len + 1;
-}
 int decodeQname(char *ptr, char *start, char *newStr) {
-    // uint16_t f = ptr[0] << 8 | ptr[1];
-    // if ((f & 0xc000) == 0xc000) {
-    //     // 数据包压缩
-    //     int offset = f & 0xfff;
-    //     ptr = start + offset;
-    //     fromQname(ptr, newStr);
-    //     return 2;
-    // } else {
-    //     return fromQname(ptr, newStr);
-    // }
     strcpy(newStr, "");
     int len = 0;
     int dot = 0;
     for (int i = 0; 1; i++) {
         if (dot == i) {
-            printf("%d", ptr[i]);
             if ((unsigned char)ptr[i] >= 0xC0) {
                 int offset = (ptr[i] << 8 | ptr[i + 1]) & 0xfff;
-                strcat(newStr, start + offset);
+                strcat(newStr, ".");
+                char tmpStr[257];
+                decodeQname(start + offset, start, tmpStr);
+                strcat(newStr, tmpStr);
                 len = i + 2;
                 break;
             } else if (ptr[i] != '\0') {
                 strcat(newStr, ".");
                 dot = i + ptr[i] + 1;
-                ptr[i] = '.';
             } else {
                 int strLength = strlen(newStr);
                 newStr[strLength] = ptr[i];
@@ -204,9 +182,7 @@ DNSPacket DNSPacket_decode(Buffer buffer) {
     for (int i = 0; i < packet.header.questionCount; i++) {
         DNSQuestion *r = &packet.questions[i];
         r->name = (char *)malloc(sizeof(char) * 256);
-        printf("\n\n\n\n%s\n\n\n\n", data);
         data += decodeQname((char *)data, (char *)buffer.data, r->name);
-        printf("\n\n\n\n%s\n\n\n\n", data);
         uint16_t tmp;
         data = _read16(data, &tmp);
         r->qtype = (DNSQType)tmp;
@@ -240,7 +216,7 @@ DNSPacket DNSPacket_decode(Buffer buffer) {
                 break;
             }
             }
-            data += r->rdataLength;
+            data += r->rdataLength + 1;
         }
     } else {
         packet.answers = NULL;
@@ -261,7 +237,7 @@ DNSPacket DNSPacket_decode(Buffer buffer) {
             data = _read16(data, &r->rdataLength);
             r->rdata = (char *)malloc(sizeof(char) * r->rdataLength);
             memcpy(r->rdata, data, r->rdataLength);
-            data += r->rdataLength;
+            data += r->rdataLength + 1;
         }
     } else {
         packet.authorities = NULL;
@@ -282,7 +258,7 @@ DNSPacket DNSPacket_decode(Buffer buffer) {
             data = _read16(data, &r->rdataLength);
             r->rdata = (char *)malloc(sizeof(char) * r->rdataLength);
             memcpy(r->rdata, data, r->rdataLength);
-            data += r->rdataLength;
+            data += r->rdataLength + 1;
         }
     } else {
         packet.additional = NULL;
@@ -532,7 +508,8 @@ void DNSPacket_print(DNSPacket *packet) {
             printf("\tPTR: %s\n", packet->answers[i].rdataName);
             break;
         case TXT:
-            printf("\tTXT: %s\n", packet->answers[i].rdata);
+            printf("\tTXT length: %d\n", (unsigned char)packet->answers[i].rdata[0]);
+            printf("\tTXT: %s\n", packet->answers[i].rdata + 1);
             break;
         default:
             printf("\tNot A or AAAA or CNAME: ");
