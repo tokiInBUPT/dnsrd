@@ -121,7 +121,7 @@ void recvFromClient(DNSRD_RUNTIME *runtime) {
                 }
             }
             if (!TTLTimeout) {
-                packet.header.opcode = OK;
+                packet.header.rcode = OK;
                 packet.header.qr = QRRESPONSE;
                 packet.header.answerCount = myData.answerCount;
                 packet.answers = (DNSRecord *)malloc(sizeof(DNSRecord) * myData.answerCount);
@@ -130,7 +130,7 @@ void recvFromClient(DNSRD_RUNTIME *runtime) {
                         free(packet.answers);
                         packet.answers = NULL;
                         packet.header.answerCount = 0;
-                        packet.header.opcode = NXDOMAIN;
+                        packet.header.rcode = NXDOMAIN;
                         break;
                     }
                     packet.answers[i] = myData.answers[i];
