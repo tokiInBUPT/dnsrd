@@ -147,6 +147,7 @@ Buffer DNSPacket_encode(DNSPacket packet) {
         DNSRecord *r = &packet.additional[i];
         data += toQname(r->name, (char *)data);
         data = _write16(data, r->type);
+        data = _write16(data, r->rclass);
         data = _write32(data, r->ttl);
         data = _write16(data, r->rdataLength);
         memcpy(data, r->rdata, r->rdataLength);

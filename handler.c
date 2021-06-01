@@ -211,38 +211,44 @@ void recvFromUpstream(DNSRD_RUNTIME *runtime) {
     if (status < 0) {
         printf("Error sendto: %d\n", WSAGetLastError());
     }
-    // 进缓存
-    Key cacheKey;
-    cacheKey.qtype = packet.questions->qtype;
-    strcpy_s(cacheKey.name, 255, packet.questions->name);
-    MyData cacheItem;
-    cacheItem.time = time(NULL);
-    cacheItem.answerCount = packet.header.answerCount;
-    cacheItem.answers = malloc(sizeof(DNSRecord) * packet.header.answerCount);
-    for (uint16_t i = 0; i < packet.header.answerCount; i++) {
-        DNSRecord *new = &cacheItem.answers[i];
-        DNSRecord *old = &packet.answers[i];
-        new->ttl = old->ttl;
-        new->type = old->type;
-        new->rclass = old->rclass;
-        size_t nameLen = strnlen_s(old->name, 255);
-        new->name = (char *)malloc(sizeof(char) * (nameLen + 1));
-        strcpy_s(new->name, nameLen + 1, old->name);
-        if (old->rdataName != NULL) {
-            nameLen = strnlen_s(old->rdataName, 255);
-            new->rdata = (char *)malloc(sizeof(char) * (nameLen + 2));
-            new->rdataName = (char *)malloc(sizeof(char) * (nameLen + 1));
-            strcpy_s(new->rdataName, nameLen + 1, old->rdataName);
-            toQname(old->rdataName, new->rdata);
-            new->rdataLength = (uint16_t)strnlen_s(new->rdata, 255) + 1;
-        } else {
-            new->rdataLength = old->rdataLength;
-            new->rdata = (char *)malloc(sizeof(char) * new->rdataLength);
-            memcpy(new->rdata, old->rdata, new->rdataLength);
-            new->rdataName = NULL;
-        }
+    int shouldCache = 1;
+    if (packet.header.rcode != OK) {
+        shouldCache = 0;
     }
-    lRUCachePut(runtime->lruCache, cacheKey, cacheItem);
+    if (shouldCache) {
+        // 进缓存
+        Key cacheKey;
+        cacheKey.qtype = packet.questions->qtype;
+        strcpy_s(cacheKey.name, 255, packet.questions->name);
+        MyData cacheItem;
+        cacheItem.time = time(NULL);
+        cacheItem.answerCount = packet.header.answerCount;
+        cacheItem.answers = malloc(sizeof(DNSRecord) * packet.header.answerCount);
+        for (uint16_t i = 0; i < packet.header.answerCount; i++) {
+            DNSRecord *newRecord = &cacheItem.answers[i];
+            DNSRecord *old = &packet.answers[i];
+            newRecord->ttl = old->ttl;
+            newRecord->type = old->type;
+            newRecord->rclass = old->rclass;
+            size_t nameLen = strnlen_s(old->name, 255);
+            newRecord->name = (char *)malloc(sizeof(char) * (nameLen + 1));
+            strcpy_s(newRecord->name, nameLen + 1, old->name);
+            if (old->rdataName != NULL) {
+                nameLen = strnlen_s(old->rdataName, 255);
+                newRecord->rdata = (char *)malloc(sizeof(char) * (nameLen + 2));
+                newRecord->rdataName = (char *)malloc(sizeof(char) * (nameLen + 1));
+                strcpy_s(newRecord->rdataName, nameLen + 1, old->rdataName);
+                toQname(old->rdataName, newRecord->rdata);
+                newRecord->rdataLength = (uint16_t)strnlen_s(newRecord->rdata, 255) + 1;
+            } else {
+                newRecord->rdataLength = old->rdataLength;
+                newRecord->rdata = (char *)malloc(sizeof(char) * newRecord->rdataLength);
+                memcpy(newRecord->rdata, old->rdata, newRecord->rdataLength);
+                newRecord->rdataName = NULL;
+            }
+        }
+        lRUCachePut(runtime->lruCache, cacheKey, cacheItem);
+    }
     // 用完销毁
     free(buffer.data);
     DNSPacket_destroy(packet);
