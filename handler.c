@@ -218,7 +218,6 @@ void recvFromUpstream(DNSRD_RUNTIME *runtime) {
     int status = 0;
     DNSPacket packet = recvDNSPacket(runtime, runtime->client, &buffer, &runtime->upstreamAddr, &status);
     // 解析后原数据就已经不需要了
-    free(buffer.data);
     // 还原id
     IdMap client = getIdMap(runtime->idmap, packet.header.id);
     packet.header.id = client.originalId;
@@ -229,12 +228,17 @@ void recvFromUpstream(DNSRD_RUNTIME *runtime) {
         printf("C<< Send packet back to client %s:%d\n", clientIp, ntohs(client.addr.sin_port));
         DNSPacket_print(&packet);
     }
-    buffer = DNSPacket_encode(packet);
+    Buffer bufferTmp;
+    bufferTmp = DNSPacket_encode(packet);
+    for (int i = 0; i < 16; i++) {
+        buffer.data[i] = bufferTmp.data[i];
+    }
+    free(bufferTmp.data);
     status = sendto(runtime->server, (char *)buffer.data, buffer.length, 0, (struct sockaddr *)&client.addr, sizeof(client.addr));
     if (status < 0) {
         printf("Error sendto: %d\n", WSAGetLastError());
     }
-    int shouldCache = 0;
+    int shouldCache = 1;
     if (packet.header.rcode != OK || !checkCacheable(packet.questions->qtype)) {
         shouldCache = 0;
     }
@@ -254,7 +258,7 @@ void recvFromUpstream(DNSRD_RUNTIME *runtime) {
             newRecord->type = old->type;
             newRecord->rclass = old->rclass;
             strcpy_s(newRecord->name, 256, old->name);
-            if (old->rdataName != NULL) {
+            if (strlen(old->rdataName)) {
                 newRecord->rdata = (char *)malloc(sizeof(char) * 256);
                 strcpy_s(newRecord->rdataName, 256, old->rdataName);
                 toQname(old->rdataName, newRecord->rdata);

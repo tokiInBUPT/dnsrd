@@ -212,6 +212,7 @@ DNSPacket DNSPacket_decode(Buffer buffer) {
                 break;
             }
             default: {
+                strcpy_s(r->rdataName, 256, "");
                 break;
             }
             }
