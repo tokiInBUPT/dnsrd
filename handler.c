@@ -47,6 +47,7 @@ DNSPacket recvDNSPacket(DNSRD_RUNTIME *runtime, SOCKET socket, Buffer *buffer, s
         packet.header.authorityCount = 0;
         return packet;
     } else if (ret == 0) {
+        printf("Error: recvfrom 0\n");
         *error = 0;
         DNSPacket packet;
         packet.answers = NULL;
@@ -87,10 +88,14 @@ int checkCacheable(DNSQType type) {
  * 接收客户端的查询请求
  */
 void recvFromClient(DNSRD_RUNTIME *runtime) {
-    Buffer buffer = makeBuffer(512);
+    Buffer buffer = makeBuffer(4096);
     struct sockaddr_in clientAddr;
     int status = 0;
     DNSPacket packet = recvDNSPacket(runtime, runtime->server, &buffer, &clientAddr, &status);
+    if (status <= 0) {
+        // 接收失败 - 空包，甚至不需要destroy。
+        return;
+    }
     // 解析后原数据就已经不需要了
     free(buffer.data);
     // 不合法的查询包不作处理
