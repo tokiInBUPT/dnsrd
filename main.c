@@ -1,4 +1,3 @@
-#include "DNSQuery.h"
 #include "cli.h"
 #include "handler.h"
 #include <signal.h>

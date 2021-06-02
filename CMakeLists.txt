@@ -4,7 +4,6 @@ add_compile_options("$<$<C_COMPILER_ID:MSVC>:/utf-8>")
 add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
 file(GLOB_RECURSE SRCS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} 
     DNSPacket.c DNSPacket.h
-    DNSQuery.c DNSQuery.h
     idTransfer.c idTransfer.h
     loadConfig.c loadConfig.h
     lhm.c lhm.h

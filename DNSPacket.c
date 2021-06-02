@@ -1,4 +1,5 @@
 #include "DNSPacket.h"
+#include "config.h"
 #include <WS2tcpip.h>
 #include <WinSock2.h>
 #include <stdio.h>
@@ -32,11 +33,11 @@ uint8_t *_write8(uint8_t *ptr, uint8_t value) {
 int toQname(char *str, char *newStr) {
     int len = (int)strlen(str);
     if (len == 0) {
-        strcpy(newStr, "");
+        newStr[0] = '\0';
         return 1;
     }
     newStr[0] = '.';
-    strcpy(newStr + 1, str); // now newStr is like ".a.example.com"
+    strcpy_s(newStr + 1, 256, str); // now newStr is like ".a.example.com"
     int dot = 0;
     for (int i = dot + 1; i <= len + 1; i++) {
         if (newStr[i] == '.' || i == len + 1) {
@@ -48,35 +49,35 @@ int toQname(char *str, char *newStr) {
     return len + 2;
 }
 int decodeQname(char *ptr, char *start, char *newStr) {
-    strcpy(newStr, "");
+    newStr[0] = '\0';
     int len = 0;
     int dot = 0;
     for (int i = 0; 1; i++) {
         if (dot == i) {
             if ((unsigned char)ptr[i] >= 0xC0) {
                 int offset = ((unsigned char)ptr[i] << 8 | (unsigned char)ptr[i + 1]) & 0xfff;
-                strcat(newStr, ".");
+                strcat_s(newStr, 256, ".");
                 char tmpStr[257];
                 decodeQname(start + offset, start, tmpStr);
-                strcat(newStr, tmpStr);
+                strcat_s(newStr, 256, tmpStr);
                 len = i + 2;
                 break;
             } else if (ptr[i] != '\0') {
-                strcat(newStr, ".");
+                strcat_s(newStr, 256, ".");
                 dot = i + ptr[i] + 1;
             } else {
-                int strLength = strlen(newStr);
+                size_t strLength = strlen(newStr);
                 newStr[strLength] = ptr[i];
                 newStr[strLength + 1] = 0;
                 len = i + 1;
                 break;
             }
         } else if (ptr[i] != '\0') {
-            int strLength = strlen(newStr);
+            size_t strLength = strlen(newStr);
             newStr[strLength] = ptr[i];
             newStr[strLength + 1] = 0;
         } else {
-            int strLength = strlen(newStr);
+            size_t strLength = strlen(newStr);
             newStr[strLength] = ptr[i];
             newStr[strLength + 1] = 0;
             len = i + 1;
@@ -84,8 +85,8 @@ int decodeQname(char *ptr, char *start, char *newStr) {
         }
     }
     char tmp[256] = "";
-    strcpy(tmp, &newStr[1]);
-    strcpy(newStr, tmp);
+    strcpy_s(tmp, 256, &newStr[1]);
+    strcpy_s(newStr, 256, tmp);
     return len;
 }
 Buffer makeBuffer(int len) {
@@ -95,7 +96,7 @@ Buffer makeBuffer(int len) {
     return buffer;
 }
 Buffer DNSPacket_encode(DNSPacket packet) {
-    Buffer buffer = makeBuffer(512);
+    Buffer buffer = makeBuffer(DNS_PACKET_SIZE);
     uint8_t *data = buffer.data;
     /* Header */
     data = _write16(data, packet.header.id);

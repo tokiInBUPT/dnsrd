@@ -4,6 +4,7 @@
 #include "idTransfer.h"
 #include <WS2tcpip.h>
 #include <WinSock2.h>
+#define SIO_UDP_CONNRESET _WSAIOW(IOC_VENDOR, 12)
 /*
  * 初始化Socket
  */
@@ -26,6 +27,11 @@ void initSocket(DNSRD_RUNTIME *runtime) {
     inet_pton(AF_INET, runtime->config.upstream, &runtime->upstreamAddr.sin_addr);
     uint16_t upstreamPort = 53;
     runtime->upstreamAddr.sin_port = htons(upstreamPort);
+    /* Winsock UDP connection reset fix */
+    BOOL bNewBehavior = FALSE;
+    DWORD dwBytesReturned = 0;
+    WSAIoctl(runtime->client, SIO_UDP_CONNRESET, &bNewBehavior, sizeof bNewBehavior, NULL, 0, &dwBytesReturned, NULL, NULL);
+    WSAIoctl(runtime->server, SIO_UDP_CONNRESET, &bNewBehavior, sizeof bNewBehavior, NULL, 0, &dwBytesReturned, NULL, NULL);
 }
 /*
  * 通用接收函数
@@ -88,7 +94,7 @@ int checkCacheable(DNSQType type) {
  * 接收客户端的查询请求
  */
 void recvFromClient(DNSRD_RUNTIME *runtime) {
-    Buffer buffer = makeBuffer(4096);
+    Buffer buffer = makeBuffer(DNS_PACKET_SIZE);
     struct sockaddr_in clientAddr;
     int status = 0;
     DNSPacket packet = recvDNSPacket(runtime, runtime->server, &buffer, &clientAddr, &status);
@@ -208,7 +214,7 @@ void recvFromClient(DNSRD_RUNTIME *runtime) {
  * 接收上游应答
  */
 void recvFromUpstream(DNSRD_RUNTIME *runtime) {
-    Buffer buffer = makeBuffer(512);
+    Buffer buffer = makeBuffer(DNS_PACKET_SIZE);
     int status = 0;
     DNSPacket packet = recvDNSPacket(runtime, runtime->client, &buffer, &runtime->upstreamAddr, &status);
     // 解析后原数据就已经不需要了
@@ -247,19 +253,17 @@ void recvFromUpstream(DNSRD_RUNTIME *runtime) {
             newRecord->ttl = old->ttl;
             newRecord->type = old->type;
             newRecord->rclass = old->rclass;
-            size_t nameLen = strnlen_s(old->name, 256);
-            strcpy_s(newRecord->name, nameLen + 1, old->name);
+            strcpy_s(newRecord->name, 256, old->name);
             if (old->rdataName != NULL) {
-                nameLen = strnlen_s(old->rdataName, 256);
-                newRecord->rdata = (char *)malloc(sizeof(char) * (nameLen + 2));
-                strcpy_s(newRecord->rdataName, nameLen + 1, old->rdataName);
+                newRecord->rdata = (char *)malloc(sizeof(char) * 256);
+                strcpy_s(newRecord->rdataName, 256, old->rdataName);
                 toQname(old->rdataName, newRecord->rdata);
                 newRecord->rdataLength = (uint16_t)strnlen_s(newRecord->rdata, 256) + 1;
             } else {
                 newRecord->rdataLength = old->rdataLength;
                 newRecord->rdata = (char *)malloc(sizeof(char) * newRecord->rdataLength);
                 memcpy(newRecord->rdata, old->rdata, newRecord->rdataLength);
-                strcpy_s(newRecord->rdataName, 256, "");
+                newRecord->rdataName[0] = '\0';
             }
         }
         lRUCachePut(runtime->lruCache, cacheKey, cacheItem);
