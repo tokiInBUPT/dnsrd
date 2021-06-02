@@ -47,6 +47,7 @@ DNSPacket recvDNSPacket(DNSRD_RUNTIME *runtime, SOCKET socket, Buffer *buffer, s
         packet.header.authorityCount = 0;
         return packet;
     } else if (ret == 0) {
+        printf("Error: recvfrom 0\n");
         *error = 0;
         DNSPacket packet;
         packet.answers = NULL;
@@ -87,10 +88,14 @@ int checkCacheable(DNSQType type) {
  * 接收客户端的查询请求
  */
 void recvFromClient(DNSRD_RUNTIME *runtime) {
-    Buffer buffer = makeBuffer(512);
+    Buffer buffer = makeBuffer(4096);
     struct sockaddr_in clientAddr;
     int status = 0;
     DNSPacket packet = recvDNSPacket(runtime, runtime->server, &buffer, &clientAddr, &status);
+    if (status <= 0) {
+        // 接收失败 - 空包，甚至不需要destroy。
+        return;
+    }
     // 解析后原数据就已经不需要了
     free(buffer.data);
     // 不合法的查询包不作处理
@@ -153,7 +158,7 @@ void recvFromClient(DNSRD_RUNTIME *runtime) {
                     memcpy(packet.answers[i].rdata, myData.answers[i].rdata, packet.answers[i].rdataLength);
                     packet.answers[i].ttl = myData.time > 0 ? myData.answers[i].ttl - cacheTime : 0;
                     if (myData.answers[i].rdataName) {
-                        strcpy_s(packet.answers[i].rdataName, 256, myData.answers[i].rdataName);
+                        memcpy(packet.answers[i].rdataName, myData.answers[i].rdataName, sizeof(char) * (strlen(myData.answers[i].rdataName) + 1));
                     } else {
                         strcpy_s(packet.answers[i].rdataName, 256, "");
                     }
@@ -254,7 +259,7 @@ void recvFromUpstream(DNSRD_RUNTIME *runtime) {
                 newRecord->rdataLength = old->rdataLength;
                 newRecord->rdata = (char *)malloc(sizeof(char) * newRecord->rdataLength);
                 memcpy(newRecord->rdata, old->rdata, newRecord->rdataLength);
-                strcpy(newRecord->rdataName, 256, "");
+                strcpy_s(newRecord->rdataName, 256, "");
             }
         }
         lRUCachePut(runtime->lruCache, cacheKey, cacheItem);
@@ -292,4 +297,3 @@ void loop(DNSRD_RUNTIME *runtime) {
         }
     }
 }
- 
