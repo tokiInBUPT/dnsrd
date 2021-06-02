@@ -9,7 +9,6 @@ DNSPacket DNSQuery(char *server, char *name, DNSQType type) {
     query.questions = (DNSQuestion *)malloc(sizeof(DNSQuestion));
     query.questions->qtype = type;
     query.questions->qclass = DNS_IN;
-    query.questions->name = (char *)malloc(sizeof(char) * 256);
     strcpy(query.questions->name, name);
     Buffer buffer = DNSPacket_encode(query);
     /* 发送 */

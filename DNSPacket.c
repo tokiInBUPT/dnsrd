@@ -181,7 +181,6 @@ DNSPacket DNSPacket_decode(Buffer buffer) {
     packet.questions = (DNSQuestion *)malloc(sizeof(DNSQuestion) * packet.header.questionCount);
     for (int i = 0; i < packet.header.questionCount; i++) {
         DNSQuestion *r = &packet.questions[i];
-        r->name = (char *)malloc(sizeof(char) * 256);
         data += decodeQname((char *)data, (char *)buffer.data, r->name);
         uint16_t tmp;
         data = _read16(data, &tmp);
@@ -194,7 +193,6 @@ DNSPacket DNSPacket_decode(Buffer buffer) {
         packet.answers = (DNSRecord *)malloc(sizeof(DNSRecord) * packet.header.answerCount);
         for (int i = 0; i < packet.header.answerCount; i++) {
             DNSRecord *r = &packet.answers[i];
-            r->name = (char *)malloc(sizeof(char) * 256);
             data += decodeQname((char *)data, (char *)buffer.data, r->name);
             uint16_t tmp;
             data = _read16(data, &tmp);
@@ -209,12 +207,10 @@ DNSPacket DNSPacket_decode(Buffer buffer) {
             case NS:
             case CNAME:
             case PTR: {
-                r->rdataName = (char *)malloc(sizeof(char) * r->rdataLength > 257 ? r->rdataLength : 257);
                 decodeQname((char *)data, (char *)buffer.data, r->rdataName);
                 break;
             }
             default: {
-                r->rdataName = NULL;
                 break;
             }
             }
@@ -228,7 +224,6 @@ DNSPacket DNSPacket_decode(Buffer buffer) {
         packet.authorities = (DNSRecord *)malloc(sizeof(DNSRecord) * packet.header.authorityCount);
         for (int i = 0; i < packet.header.authorityCount; i++) {
             DNSRecord *r = &packet.authorities[i];
-            r->name = (char *)malloc(sizeof(char) * 256);
             data += decodeQname((char *)data, (char *)buffer.data, r->name);
             uint16_t tmp;
             data = _read16(data, &tmp);
@@ -240,7 +235,6 @@ DNSPacket DNSPacket_decode(Buffer buffer) {
             r->rdata = (char *)malloc(sizeof(char) * r->rdataLength);
             memcpy(r->rdata, data, r->rdataLength);
             data += r->rdataLength;
-            r->rdataName = NULL;
         }
     } else {
         packet.authorities = NULL;
@@ -250,7 +244,6 @@ DNSPacket DNSPacket_decode(Buffer buffer) {
         packet.additional = (DNSRecord *)malloc(sizeof(DNSRecord) * packet.header.additionalCount);
         for (int i = 0; i < packet.header.additionalCount; i++) {
             DNSRecord *r = &packet.additional[i];
-            r->name = (char *)malloc(sizeof(char) * 256);
             data += decodeQname((char *)data, (char *)buffer.data, r->name);
             uint16_t tmp;
             data = _read16(data, &tmp);
@@ -262,7 +255,6 @@ DNSPacket DNSPacket_decode(Buffer buffer) {
             r->rdata = (char *)malloc(sizeof(char) * r->rdataLength);
             memcpy(r->rdata, data, r->rdataLength);
             data += r->rdataLength;
-            r->rdataName = NULL;
         }
     } else {
         packet.additional = NULL;
@@ -270,53 +262,22 @@ DNSPacket DNSPacket_decode(Buffer buffer) {
     return packet;
 }
 void DNSPacket_destroy(DNSPacket packet) {
-    for (int i = 0; i < packet.header.questionCount; i++) {
-        if (packet.questions[i].name == NULL) {
-            continue;
-        }
-        free(packet.questions[i].name);
-        packet.questions[i].name = NULL;
-    }
     for (int i = 0; i < packet.header.answerCount; i++) {
-        if (packet.answers[i].name != NULL) {
-            free(packet.answers[i].name);
-            packet.answers[i].name = NULL;
-        }
         if (packet.answers[i].rdata != NULL) {
             free(packet.answers[i].rdata);
             packet.answers[i].rdata = NULL;
         }
-        if (packet.answers[i].rdataName != NULL) {
-            free(packet.answers[i].rdataName);
-            packet.answers[i].rdataName = NULL;
-        }
     }
     for (int i = 0; i < packet.header.authorityCount; i++) {
-        if (packet.authorities[i].name != NULL) {
-            free(packet.authorities[i].name);
-            packet.authorities[i].name = NULL;
-        }
         if (packet.authorities[i].rdata != NULL) {
             free(packet.authorities[i].rdata);
             packet.authorities[i].rdata = NULL;
         }
-        if (packet.authorities[i].rdataName != NULL) {
-            free(packet.authorities[i].rdataName);
-            packet.authorities[i].rdataName = NULL;
-        }
     }
     for (int i = 0; i < packet.header.additionalCount; i++) {
-        if (packet.additional[i].name != NULL) {
-            free(packet.additional[i].name);
-            packet.additional[i].name = NULL;
-        }
         if (packet.additional[i].rdata != NULL) {
             free(packet.additional[i].rdata);
             packet.additional[i].rdata = NULL;
-        }
-        if (packet.additional[i].rdataName != NULL) {
-            free(packet.additional[i].rdataName);
-            packet.additional[i].rdataName = NULL;
         }
     }
     free(packet.answers);

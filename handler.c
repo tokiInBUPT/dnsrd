@@ -148,16 +148,14 @@ void recvFromClient(DNSRD_RUNTIME *runtime) {
                         break;
                     }
                     packet.answers[i] = myData.answers[i];
-                    packet.answers[i].name = (char *)malloc(sizeof(char) * (strlen(myData.answers[i].name) + 1));
                     memcpy(packet.answers[i].name, myData.answers[i].name, sizeof(char) * (strlen(myData.answers[i].name) + 1));
                     packet.answers[i].rdata = (char *)malloc(packet.answers[i].rdataLength);
                     memcpy(packet.answers[i].rdata, myData.answers[i].rdata, packet.answers[i].rdataLength);
                     packet.answers[i].ttl = myData.time > 0 ? myData.answers[i].ttl - cacheTime : 0;
                     if (myData.answers[i].rdataName) {
-                        packet.answers[i].rdataName = (char *)malloc(sizeof(char) * (strlen(myData.answers[i].rdataName) + 1));
-                        memcpy(packet.answers[i].rdataName, myData.answers[i].rdataName, sizeof(char) * (strlen(myData.answers[i].rdataName) + 1));
+                        strcpy_s(packet.answers[i].rdataName, 256, myData.answers[i].rdataName);
                     } else {
-                        packet.answers[i].rdataName = NULL;
+                        strcpy_s(packet.answers[i].rdataName, 256, "");
                     }
                 }
                 if (runtime->config.debug) {
@@ -245,12 +243,10 @@ void recvFromUpstream(DNSRD_RUNTIME *runtime) {
             newRecord->type = old->type;
             newRecord->rclass = old->rclass;
             size_t nameLen = strnlen_s(old->name, 256);
-            newRecord->name = (char *)malloc(sizeof(char) * (nameLen + 1));
             strcpy_s(newRecord->name, nameLen + 1, old->name);
             if (old->rdataName != NULL) {
                 nameLen = strnlen_s(old->rdataName, 256);
                 newRecord->rdata = (char *)malloc(sizeof(char) * (nameLen + 2));
-                newRecord->rdataName = (char *)malloc(sizeof(char) * (nameLen + 1));
                 strcpy_s(newRecord->rdataName, nameLen + 1, old->rdataName);
                 toQname(old->rdataName, newRecord->rdata);
                 newRecord->rdataLength = (uint16_t)strnlen_s(newRecord->rdata, 256) + 1;
@@ -258,7 +254,7 @@ void recvFromUpstream(DNSRD_RUNTIME *runtime) {
                 newRecord->rdataLength = old->rdataLength;
                 newRecord->rdata = (char *)malloc(sizeof(char) * newRecord->rdataLength);
                 memcpy(newRecord->rdata, old->rdata, newRecord->rdataLength);
-                newRecord->rdataName = NULL;
+                strcpy(newRecord->rdataName, 256, "");
             }
         }
         lRUCachePut(runtime->lruCache, cacheKey, cacheItem);
@@ -296,3 +292,4 @@ void loop(DNSRD_RUNTIME *runtime) {
         }
     }
 }
+ 

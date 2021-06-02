@@ -111,18 +111,18 @@ typedef struct DNSQuestion {
     DNSQType qtype;
     DNSQClass qclass;
     /* 正常名称 - 发送后再转换 */
-    char *name;
+    char name[256];
 } DNSQuestion;
 
 typedef struct DNSRecord {
     /* 正常名称 - 转换后再存入 */
-    char *name;
+    char name[256];
     DNSQType type;
     DNSQClass rclass;
     uint32_t ttl;
     uint16_t rdataLength;
     char *rdata;
-    char *rdataName;
+    char rdataName[256];
 } DNSRecord;
 
 typedef struct DNSPacket {
