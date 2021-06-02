@@ -22,7 +22,7 @@ DNSRD_CONFIG initConfig(int argc, char *argv[]) {
             config.debug = 1;
             break;
         case 'f':
-            strcpy_s(config.hostfile, 255, optarg);
+            strcpy_s(config.hostfile, 256, optarg);
             break;
         case 'u':
             strcpy_s(config.upstream, 16, optarg);
@@ -76,7 +76,7 @@ void cliHead() {
 }
 void cliStarted(DNSRD_CONFIG *config) {
     printf("Listening on 0.0.0.0:%d with upstream %s", config->port, config->upstream);
-    if(config->debug){
+    if (config->debug) {
         printf(" and DEBUG ENABLED");
     }
     printf("\n");

@@ -433,7 +433,7 @@ void DNSPacket_print(DNSPacket *packet) {
             printf("\tType: AAAA (28)\n");
             break;
         case ANY:
-            printf("\tType: ANY (255)\n");
+            printf("\tType: ANY (256)\n");
             break;
         default:
             break;
@@ -472,7 +472,7 @@ void DNSPacket_print(DNSPacket *packet) {
             printf("\tType: AAAA (28)\n");
             break;
         case ANY:
-            printf("\tType: ANY (255)\n");
+            printf("\tType: ANY (256)\n");
             break;
         default:
             break;

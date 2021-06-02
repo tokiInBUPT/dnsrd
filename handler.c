@@ -38,11 +38,25 @@ DNSPacket recvDNSPacket(DNSRD_RUNTIME *runtime, SOCKET socket, Buffer *buffer, s
         *error = -1;
         DNSPacket packet;
         packet.answers = NULL;
+        packet.questions = NULL;
+        packet.additional = NULL;
+        packet.authorities = NULL;
+        packet.header.questionCount = 0;
+        packet.header.answerCount = 0;
+        packet.header.additionalCount = 0;
+        packet.header.authorityCount = 0;
         return packet;
     } else if (ret == 0) {
         *error = 0;
         DNSPacket packet;
         packet.answers = NULL;
+        packet.questions = NULL;
+        packet.additional = NULL;
+        packet.authorities = NULL;
+        packet.header.questionCount = 0;
+        packet.header.answerCount = 0;
+        packet.header.additionalCount = 0;
+        packet.header.authorityCount = 0;
         return packet;
     }
     buffer->length = ret;
@@ -211,35 +225,35 @@ void recvFromUpstream(DNSRD_RUNTIME *runtime) {
     if (status < 0) {
         printf("Error sendto: %d\n", WSAGetLastError());
     }
-    int shouldCache = 1;
-    if (packet.header.rcode != OK) {
+    int shouldCache = 0;
+    if (packet.header.rcode != OK || !checkCacheable(packet.questions->qtype)) {
         shouldCache = 0;
     }
     if (shouldCache) {
         // 进缓存
         Key cacheKey;
         cacheKey.qtype = packet.questions->qtype;
-        strcpy_s(cacheKey.name, 255, packet.questions->name);
+        strcpy_s(cacheKey.name, 256, packet.questions->name);
         MyData cacheItem;
         cacheItem.time = time(NULL);
         cacheItem.answerCount = packet.header.answerCount;
-        cacheItem.answers = malloc(sizeof(DNSRecord) * packet.header.answerCount);
+        cacheItem.answers = (DNSRecord *)malloc(sizeof(DNSRecord) * packet.header.answerCount);
         for (uint16_t i = 0; i < packet.header.answerCount; i++) {
             DNSRecord *newRecord = &cacheItem.answers[i];
             DNSRecord *old = &packet.answers[i];
             newRecord->ttl = old->ttl;
             newRecord->type = old->type;
             newRecord->rclass = old->rclass;
-            size_t nameLen = strnlen_s(old->name, 255);
+            size_t nameLen = strnlen_s(old->name, 256);
             newRecord->name = (char *)malloc(sizeof(char) * (nameLen + 1));
             strcpy_s(newRecord->name, nameLen + 1, old->name);
             if (old->rdataName != NULL) {
-                nameLen = strnlen_s(old->rdataName, 255);
+                nameLen = strnlen_s(old->rdataName, 256);
                 newRecord->rdata = (char *)malloc(sizeof(char) * (nameLen + 2));
                 newRecord->rdataName = (char *)malloc(sizeof(char) * (nameLen + 1));
                 strcpy_s(newRecord->rdataName, nameLen + 1, old->rdataName);
                 toQname(old->rdataName, newRecord->rdata);
-                newRecord->rdataLength = (uint16_t)strnlen_s(newRecord->rdata, 255) + 1;
+                newRecord->rdataLength = (uint16_t)strnlen_s(newRecord->rdata, 256) + 1;
             } else {
                 newRecord->rdataLength = old->rdataLength;
                 newRecord->rdata = (char *)malloc(sizeof(char) * newRecord->rdataLength);
