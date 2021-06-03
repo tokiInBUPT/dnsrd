@@ -134,7 +134,6 @@ void recvFromClient(DNSRD_RUNTIME *runtime) {
         MyData myData = lRUCacheGet(runtime->lruCache, key);
         uint32_t cacheTime = (uint32_t)(time(NULL) - myData.time);
         if (myData.answerCount > 0) {
-
             if (runtime->config.debug) {
                 printf("HIT CACHE\n");
             }
@@ -275,6 +274,12 @@ void recvFromUpstream(DNSRD_RUNTIME *runtime) {
         }
         lRUCachePut(runtime->lruCache, cacheKey, cacheItem);
         writeCache(runtime->config.cachefile, runtime);
+        if (runtime->config.debug) {
+            printf("ADDED TO CACHE\n");
+        }
+    }
+    if (runtime->config.debug) {
+        printf("CACHE SIZE %d\n", runtime->lruCache->size);
     }
     // 用完销毁
     free(buffer.data);

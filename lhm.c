@@ -79,15 +79,12 @@ MyData lRUCacheGet(LRUCache *obj, Key key) {
 }
 
 void lRUCachePut(LRUCache *obj, Key key, MyData value) {
-    struct hash *addr = HashMap(obj->table, key, obj->capacity);                                        //取得哈希地址
-    if (lRUCacheGet(obj, key).answerCount == Nothingness) {                                             //key所指向的表项不存在或已过期
-        if (obj->size >= obj->capacity) {                                                               //缓存容量达到上限
-                                                                                                        //start
-            struct node *last;                                                                          //最后一个数据结点
-            for (last = obj->tail->prev; last != obj->head && last->value.time == 0; last = last->prev) //找到最后一个可删除结点（即保证不删除host文件中的结点）
-            {
-                printf("name: %s ", last->key.name);
-                printf("time: %d\n", last->value.time);
+    struct hash *addr = HashMap(obj->table, key, obj->capacity);                                          //取得哈希地址
+    if (lRUCacheGet(obj, key).answerCount == Nothingness) {                                               //key所指向的表项不存在或已过期
+        if (obj->size >= obj->capacity) {                                                                 //缓存容量达到上限
+                                                                                                          //start
+            struct node *last;                                                                            //最后一个数据结点
+            for (last = obj->tail->prev; last != obj->head && last->value.time == 0; last = last->prev) { //找到最后一个可删除结点（即保证不删除host文件中的结点）
             }
             if (last == obj->head) {
                 printf("!!!No room for values outside the hosts file\n");
@@ -102,6 +99,7 @@ void lRUCachePut(LRUCache *obj, Key key, MyData value) {
                 remove = remove->next;
             }
             ptr->next = remove->next; //在hash table[last->key % capacity] 链表中删除最久未使用的hash结点
+            free(remove->unused->value.answers);
             remove->next = NULL;
             remove->unused = NULL; //解除映射
             free(remove);          //回收hash结点资源
