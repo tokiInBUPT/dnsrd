@@ -9,6 +9,7 @@ typedef struct DNSRD_CONFIG {
     int port;
     char upstream[16];
     char hostfile[256];
+    char cachefile[256];
 } DNSRD_CONFIG;
 typedef struct DNSRD_RUNTIME {
     DNSRD_CONFIG config;

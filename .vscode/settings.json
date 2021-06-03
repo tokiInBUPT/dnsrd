@@ -11,6 +11,9 @@
         "dnspacket.h": "c",
         "rbtree.h": "c",
         "getopt.h": "c",
-        "idtransfer.h": "c"
+        "idtransfer.h": "c",
+        "loadconfig.h": "c",
+        "cli.h": "c",
+        "loadcache.h": "c"
     }
 }

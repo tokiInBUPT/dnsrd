@@ -1,5 +1,6 @@
 #include "cli.h"
 #include "lib/getopt.h"
+#include "loadCache.h"
 #include "loadConfig.h"
 #include <io.h>
 #include <stdio.h>
@@ -9,10 +10,11 @@ DNSRD_CONFIG initConfig(int argc, char *argv[]) {
     DNSRD_CONFIG config;
     config.upstream[0] = '\0';
     config.hostfile[0] = '\0';
+    config.cachefile[0] = '\0';
     config.port = 53;
     config.debug = 0;
     char current = '\0';
-    while ((current = getopt(argc, argv, "u:f:p:dh")) != -1) {
+    while ((current = getopt(argc, argv, "c:u:f:p:dh")) != -1) {
         switch (current) {
         case 'h':
             cliHelp();
@@ -26,6 +28,9 @@ DNSRD_CONFIG initConfig(int argc, char *argv[]) {
             break;
         case 'u':
             strcpy_s(config.upstream, 16, optarg);
+            break;
+        case 'c':
+            strcpy_s(config.cachefile, 256, optarg);
             break;
         case 'p':
             config.port = atoi(optarg);
@@ -44,6 +49,10 @@ DNSRD_CONFIG initConfig(int argc, char *argv[]) {
         printf("Invaild hostfile");
         exit(-1);
     }
+    if (strlen(config.cachefile) == 0) {
+        printf("Invaild cachefile");
+        exit(-1);
+    }
     if (config.port <= 0) {
         printf("Invaild port");
         exit(-1);
@@ -58,6 +67,7 @@ DNSRD_RUNTIME initRuntime(DNSRD_CONFIG *config) {
     runtime.maxId = 0;
     runtime.lruCache = lRUCacheCreate(MAXCACHE);
     loadConfig(config->hostfile, runtime.lruCache);
+    loadCache(config->cachefile, &runtime);
     return runtime;
 }
 void destroyRuntime(DNSRD_RUNTIME *runtime) {

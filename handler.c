@@ -174,6 +174,7 @@ void recvFromClient(DNSRD_RUNTIME *runtime) {
                     inet_ntop(AF_INET, &clientAddr.sin_addr, clientIp, sizeof(clientIp));
                     printf("C<< Send packet back to client %s:%d\n", clientIp, ntohs(clientAddr.sin_port));
                     DNSPacket_print(&packet);
+                    printf("CACHE SIZE %d\n", runtime->lruCache->size);
                 }
                 packet.header.ra = 1;
                 buffer = DNSPacket_encode(packet);
@@ -227,6 +228,7 @@ void recvFromUpstream(DNSRD_RUNTIME *runtime) {
         inet_ntop(AF_INET, &client.addr.sin_addr, clientIp, sizeof(clientIp));
         printf("C<< Send packet back to client %s:%d\n", clientIp, ntohs(client.addr.sin_port));
         DNSPacket_print(&packet);
+        printf("CACHE SIZE %d\n", runtime->lruCache->size);
     }
     Buffer bufferTmp;
     bufferTmp = DNSPacket_encode(packet);
@@ -271,6 +273,7 @@ void recvFromUpstream(DNSRD_RUNTIME *runtime) {
             }
         }
         lRUCachePut(runtime->lruCache, cacheKey, cacheItem);
+        writeCache(runtime->config.cachefile, runtime);
     }
     // 用完销毁
     free(buffer.data);

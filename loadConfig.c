@@ -54,20 +54,22 @@ void loadConfig(char *fname, LRUCache *lruCache) {
                 }
                 if (flag_nxdomain) {
                     record.rdata = NULL;
+                    record.rdataLength = 0;
                 } else {
                     memcpy(record.rdata, ipv6data.u.Byte, sizeof(uint8_t) * 8);
+                    record.rdataLength = sizeof(uint8_t) * 8;
                 }
-                record.rdataLength = sizeof(uint8_t) * 8;
             } else {
                 record.rdata = (char *)malloc(sizeof(uint8_t) * 4);
                 struct in_addr ipv4data;
                 inet_pton(AF_INET, buf1, &ipv4data);
                 if (ipv4data.S_un.S_addr == 0) {
                     record.rdata = NULL;
+                    record.rdataLength = 0;
                 } else {
                     memcpy(record.rdata, &ipv4data.S_un.S_addr, sizeof(int));
+                    record.rdataLength = sizeof(uint8_t) * 4;
                 }
-                record.rdataLength = sizeof(uint8_t) * 4;
             }
             strcpy_s(record.name, strnlen_s(buf2, 256) + 1, buf2);
             record.rclass = DNS_IN;
