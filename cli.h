@@ -3,7 +3,7 @@
 #include "idTransfer.h"
 #include "lhm.h"
 #include <WinSock2.h>
-#define MAXCACHE 65535
+#define MAXCACHE 128
 typedef struct DNSRD_CONFIG {
     int debug;
     int port;

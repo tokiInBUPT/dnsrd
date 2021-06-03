@@ -1,22 +1,7 @@
 #include "loadCache.h"
 
 void loadCache(char *fname, DNSRD_RUNTIME *runtime) {
-    FILE *f;
-    fopen_s(&f, fname, "r");
-    if (f == NULL) {
-        printf("Cache file does not exist\n");
-        return;
-    }
-    char *text;
-    fseek(f, 0, SEEK_END);
-    long lSize = ftell(f);
-    // 用完后需要将内存free掉
-    text = (char *)malloc(lSize + 1);
-    rewind(f);
-    fread(text, sizeof(char), lSize, f);
-    text[lSize] = '\0';
-    fclose(f);
-    yyjson_doc *doc = yyjson_read(text, strlen(text), 0);
+    yyjson_doc *doc = yyjson_read_file(fname, 0, NULL, NULL);
     yyjson_val *root = yyjson_doc_get_root(doc);
     size_t idx, max;
     yyjson_val *objectItem;
@@ -72,7 +57,6 @@ void loadCache(char *fname, DNSRD_RUNTIME *runtime) {
         }
         lRUCachePut(runtime->lruCache, key, value);
     }
-    free(text);
     printf("Cache file loaded, size id %d\n", runtime->lruCache->size);
 }
 
@@ -116,12 +100,6 @@ void writeCache(char *fname, DNSRD_RUNTIME *runtime) {
         yyjson_mut_arr_add_val(root, objItem);
         head = head->next;
     }
-    const char *json = yyjson_mut_write(doc, 0, NULL);
-    if (json) {
-        FILE *f = fopen(fname, "w");
-        fputs(json, f);
-        fclose(f);
-        free((void *)json);
-    }
+    yyjson_mut_write_file(fname, doc, YYJSON_WRITE_PRETTY, NULL, NULL);
     yyjson_mut_doc_free(doc);
 }

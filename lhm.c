@@ -15,6 +15,7 @@ struct hash *HashMap(struct hash *table, Key key, int capacity) { //哈希地址
         hashValue += key.name[i];
     }
     int addr = hashValue % capacity; //求余数
+    struct hash *tmptmp = &table[addr];
     return &table[addr];
 }
 
@@ -84,8 +85,8 @@ void lRUCachePut(LRUCache *obj, Key key, MyData value) {
             struct node *last = obj->tail->prev;                                 //最后一个数据结点
             struct hash *remove = HashMap(obj->table, last->key, obj->capacity); //舍弃结点的哈希地址
             struct hash *ptr = remove;
-            remove = remove->next;                             //跳过头结点
-            while (same_key(remove->unused->key, last->key)) { //找到最久未使用的结点
+            remove = remove->next;                                             //跳过头结点
+            while (remove->next && same_key(remove->unused->key, last->key)) { //找到最久未使用的结点
                 ptr = remove;
                 remove = remove->next;
             }
