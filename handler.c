@@ -100,6 +100,7 @@ void recvFromClient(DNSRD_RUNTIME *runtime) {
     DNSPacket packet = recvDNSPacket(runtime, runtime->server, &buffer, &clientAddr, &status);
     if (status <= 0) {
         // 接收失败 - 空包，甚至不需要destroy。
+        free(buffer.data);
         return;
     }
     // 解析后原数据就已经不需要了

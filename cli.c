@@ -66,8 +66,8 @@ DNSRD_RUNTIME initRuntime(DNSRD_CONFIG *config) {
     runtime.idmap = initIdMap();
     runtime.maxId = 0;
     runtime.lruCache = lRUCacheCreate(MAXCACHE);
-    loadConfig(config->hostfile, runtime.lruCache);
     loadCache(config->cachefile, &runtime);
+    loadConfig(config->hostfile, runtime.lruCache);
     return runtime;
 }
 void destroyRuntime(DNSRD_RUNTIME *runtime) {
