@@ -25,7 +25,7 @@ struct node {
 }; //双向链表
 
 struct hash {
-    struct node *unused; //数据的未使用时长
+    struct node *unused; //数据的未使用时长???
     struct hash *next;   //拉链法解决哈希冲突
 };                       //哈希表结构
 

@@ -1,5 +1,5 @@
 #include "lhm.h"
-
+/*判断是否为key值是否相同*/
 int same_key(Key key1, Key key2) {
     if (key1.qtype != key2.qtype || strcmp(key1.name, key2.name)) {
         return 0;
@@ -79,21 +79,33 @@ MyData lRUCacheGet(LRUCache *obj, Key key) {
 }
 
 void lRUCachePut(LRUCache *obj, Key key, MyData value) {
-    struct hash *addr = HashMap(obj->table, key, obj->capacity);                 //取得哈希地址
-    if (lRUCacheGet(obj, key).answerCount == Nothingness) {                      //密钥不存在
-        if (obj->size >= obj->capacity) {                                        //缓存容量达到上限
-            struct node *last = obj->tail->prev;                                 //最后一个数据结点
+    struct hash *addr = HashMap(obj->table, key, obj->capacity);                                        //取得哈希地址
+    if (lRUCacheGet(obj, key).answerCount == Nothingness) {                                             //key所指向的表项不存在或已过期
+        if (obj->size >= obj->capacity) {                                                               //缓存容量达到上限
+                                                                                                        //start
+            struct node *last;                                                                          //最后一个数据结点
+            for (last = obj->tail->prev; last != obj->head && last->value.time == 0; last = last->prev) //找到最后一个可删除结点（即保证不删除host文件中的结点）
+            {
+                printf("name: %s ", last->key.name);
+                printf("time: %d\n", last->value.time);
+            }
+            if (last == obj->head) {
+
+                printf("!!!No room for values outside the hosts file\n");
+                return;
+            }
+            //end
             struct hash *remove = HashMap(obj->table, last->key, obj->capacity); //舍弃结点的哈希地址
             struct hash *ptr = remove;
             remove = remove->next;                                             //跳过头结点
-            while (remove->next && same_key(remove->unused->key, last->key)) { //找到最久未使用的结点
+            while (remove->next && same_key(remove->unused->key, last->key)) { //找到最久未使用结点的前一个结点
                 ptr = remove;
                 remove = remove->next;
             }
-            ptr->next = remove->next; //在 table[last->key % capacity] 链表中删除结点
+            ptr->next = remove->next; //在hash table[last->key % capacity] 链表中删除最久未使用的hash结点
             remove->next = NULL;
             remove->unused = NULL; //解除映射
-            free(remove);          //回收资源
+            free(remove);          //回收hash结点资源
             struct hash *new_node = (struct hash *)malloc(sizeof(struct hash));
             new_node->next = addr->next; //连接到 table[key % capacity] 的链表中
             addr->next = new_node;
