@@ -39,9 +39,9 @@ void initSocket(DNSRD_RUNTIME *runtime) {
 DNSPacket recvDNSPacket(DNSRD_RUNTIME *runtime, SOCKET socket, Buffer *buffer, struct sockaddr_in *clientAddr, int *error) {
     int clientAddrLength = sizeof(*clientAddr);
     int ret = recvfrom(socket, (char *)buffer->data, buffer->length, 0, (struct sockaddr *)clientAddr, &clientAddrLength);
-    if (ret < 0) {
+    if (ret < 0) { //收取失败
         printf("Error: recvfrom %d\n", WSAGetLastError());
-        *error = -1;
+        *error = -1; //给函数调用者的标识
         DNSPacket packet;
         packet.answers = NULL;
         packet.questions = NULL;
@@ -51,10 +51,10 @@ DNSPacket recvDNSPacket(DNSRD_RUNTIME *runtime, SOCKET socket, Buffer *buffer, s
         packet.header.answerCount = 0;
         packet.header.additionalCount = 0;
         packet.header.authorityCount = 0;
-        return packet;
-    } else if (ret == 0) {
+        return packet;     //返回空包
+    } else if (ret == 0) { //等待协议时网络中断
         printf("Error: recvfrom 0\n");
-        *error = 0;
+        *error = 0; //给函数调用者的标识
         DNSPacket packet;
         packet.answers = NULL;
         packet.questions = NULL;
@@ -64,12 +64,12 @@ DNSPacket recvDNSPacket(DNSRD_RUNTIME *runtime, SOCKET socket, Buffer *buffer, s
         packet.header.answerCount = 0;
         packet.header.additionalCount = 0;
         packet.header.authorityCount = 0;
-        return packet;
+        return packet; //返回空包
     }
-    buffer->length = ret;
-    *error = ret;
-    DNSPacket packet = DNSPacket_decode(*buffer);
-    if (runtime->config.debug) {
+    buffer->length = ret;                         //接收成功
+    *error = ret;                                 //给函数调用者的标识
+    DNSPacket packet = DNSPacket_decode(*buffer); //将buffer的数据转成packet
+    if (runtime->config.debug) {                  //debug信息
         if (socket == runtime->server) {
             char clientIp[16];
             inet_ntop(AF_INET, &clientAddr->sin_addr, clientIp, sizeof(clientIp));
@@ -94,9 +94,9 @@ int checkCacheable(DNSQType type) {
  * 接收客户端的查询请求
  */
 void recvFromClient(DNSRD_RUNTIME *runtime) {
-    Buffer buffer = makeBuffer(DNS_PACKET_SIZE);
+    Buffer buffer = makeBuffer(DNS_PACKET_SIZE); //创建buffer （一段内存空间）
     struct sockaddr_in clientAddr;
-    int status = 0;
+    int status = 0; //指示DNS包接收状态
     DNSPacket packet = recvDNSPacket(runtime, runtime->server, &buffer, &clientAddr, &status);
     if (status <= 0) {
         // 接收失败 - 空包，甚至不需要destroy。
@@ -106,7 +106,7 @@ void recvFromClient(DNSRD_RUNTIME *runtime) {
     free(buffer.data);
     // 不合法的查询包不作处理
     if (packet.header.qr != QRQUERY || packet.header.questionCount < 1) {
-        DNSPacket_destroy(packet);
+        DNSPacket_destroy(packet); //销毁packet，解除内存占用
         return;
     }
     /*
@@ -127,7 +127,7 @@ void recvFromClient(DNSRD_RUNTIME *runtime) {
     }
     // 若能查询先查询本地缓存
     if (checkCacheable(packet.questions->qtype)) {
-        Key key;
+        Key key;                                   //
         key.qtype = packet.questions->qtype;
         strcpy_s(key.name, 256, packet.questions[0].name);
         MyData myData = lRUCacheGet(runtime->lruCache, key);
@@ -145,7 +145,7 @@ void recvFromClient(DNSRD_RUNTIME *runtime) {
                     break;
                 }
             }
-            if (!TTLTimeout) {
+            if (!TTLTimeout) { //未过期
                 packet.header.rcode = OK;
                 packet.header.qr = QRRESPONSE;
                 packet.header.answerCount = myData.answerCount;
@@ -280,13 +280,13 @@ void recvFromUpstream(DNSRD_RUNTIME *runtime) {
  * 主循环
  */
 void loop(DNSRD_RUNTIME *runtime) {
-    fd_set fd;
+    fd_set fd; //句柄的集合
     while (1) {
-        FD_ZERO(&fd);
-        FD_SET(runtime->server, &fd);
-        FD_SET(runtime->client, &fd);
-        TIMEVAL timeout = {5, 0};
-        int ret = select(0, &fd, NULL, NULL, &timeout);
+        FD_ZERO(&fd);                                   //清空句柄集合
+        FD_SET(runtime->server, &fd);                   //加入句柄集合
+        FD_SET(runtime->client, &fd);                   //
+        TIMEVAL timeout = {5, 0};                       //5秒0
+        int ret = select(0, &fd, NULL, NULL, &timeout); //返回状态
         if (runtime->quit == 1) {
             // 退出则不再处理
             return;
@@ -296,10 +296,10 @@ void loop(DNSRD_RUNTIME *runtime) {
             printf("ERROR: select %d\n", WSAGetLastError());
         } else if (ret > 0) {
             // 大于0说明有数据可以获取
-            if (FD_ISSET(runtime->server, &fd)) {
+            if (FD_ISSET(runtime->server, &fd)) { //收到了来自下级的请求
                 recvFromClient(runtime);
             }
-            if (FD_ISSET(runtime->client, &fd)) {
+            if (FD_ISSET(runtime->client, &fd)) { //收到了来自上级的回复
                 recvFromUpstream(runtime);
             }
         }

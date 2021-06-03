@@ -14,13 +14,14 @@ BOOL WINAPI consoleHandler(DWORD signal) {
 }
 
 int main(int argc, char *argv[]) {
-    cliHead();
+    cliHead();//打印标题
     /* 从命令行参数获取配置信息  */
-    DNSRD_CONFIG config = initConfig(argc, argv);
+    DNSRD_CONFIG config = initConfig(argc, argv); 
     /* 初始化ID转换表和红黑树  */
     runtime = initRuntime(&config);
     /* 初始化Socket */
     initSocket(&runtime);
+    /* 输出初始化信息 */
     cliStarted(&config);
     /* 设置Ctrl+C(SIGINT)时的友好退出  */
     SetConsoleCtrlHandler(consoleHandler, TRUE);

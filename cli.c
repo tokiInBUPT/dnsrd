@@ -72,7 +72,7 @@ void destroyRuntime(DNSRD_RUNTIME *runtime) {
     lRUCacheFree(runtime->lruCache);
 }
 void cliHead() {
-    printf("DNSRD Project v1.0 by xyToki&Jray&cn_zyk 2021.5\n");
+    printf("DNSRD Project v1.0 by xyToki&Jraaay&CN_zhouyk 2021.5\n");
 }
 void cliStarted(DNSRD_CONFIG *config) {
     printf("Listening on 0.0.0.0:%d with upstream %s", config->port, config->upstream);

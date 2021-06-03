@@ -5,24 +5,26 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
+/*缓存数据的关键字*/
 typedef struct Key {
-    DNSQType qtype;
-    char name[256];
+    DNSQType qtype; //查询类型
+    char name[256]; //待查询字符串
 } Key;
 
+/*缓存的数据*/
 typedef struct MyData {
-    time_t time;
-    uint32_t answerCount;
-    DNSRecord *answers;
+    time_t time;          //缓存时间
+    uint32_t answerCount; //资源信息的数量
+    DNSRecord *answers;   //改数据项中的资源信息（例如IP地址、域名等）
 } MyData;
 
+/*LRU中的结点*/
 struct node {
-    Key key;
-    MyData value;
-    struct node *prev;
-    struct node *next;
-}; //双向链表
+    Key key;           //关键码
+    MyData value;      //结点中的数据
+    struct node *prev; //前指针
+    struct node *next; //后指针
+};                     //双向链表
 
 struct hash {
     struct node *unused; //数据的未使用时长
