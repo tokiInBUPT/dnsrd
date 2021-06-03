@@ -6,8 +6,10 @@ file(GLOB_RECURSE SRCS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
     DNSPacket.c DNSPacket.h
     idTransfer.c idTransfer.h
     loadConfig.c loadConfig.h
-    lhm.c lhm.h
+    yyjson.c yyjson.h
     cli.c cli.h
+    loadCache.c loadCache.h
+    lhm.c lhm.h
     handler.c
     handler.h
 )

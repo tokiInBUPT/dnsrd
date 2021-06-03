@@ -3,12 +3,13 @@
 #include "idTransfer.h"
 #include "lhm.h"
 #include <WinSock2.h>
-#define MAXCACHE 65535
+#define MAXCACHE 13
 typedef struct DNSRD_CONFIG {
     int debug;          //是否输出debug信息
     int port;           //监听地址，默认53
     char upstream[16];  //上级DNS服务器的IP
     char hostfile[256]; //HOST文件的文件名
+    char cachefile[256];
 } DNSRD_CONFIG;
 typedef struct DNSRD_RUNTIME {
     DNSRD_CONFIG config;             //服务器配置信息

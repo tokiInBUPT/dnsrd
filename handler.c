@@ -100,6 +100,7 @@ void recvFromClient(DNSRD_RUNTIME *runtime) {
     DNSPacket packet = recvDNSPacket(runtime, runtime->server, &buffer, &clientAddr, &status);
     if (status <= 0) {
         // 接收失败 - 空包，甚至不需要destroy。
+        free(buffer.data);
         return;
     }
     // 解析后原数据就已经不需要了
@@ -133,7 +134,6 @@ void recvFromClient(DNSRD_RUNTIME *runtime) {
         MyData myData = lRUCacheGet(runtime->lruCache, key);
         uint32_t cacheTime = (uint32_t)(time(NULL) - myData.time);
         if (myData.answerCount > 0) {
-
             if (runtime->config.debug) {
                 printf("HIT CACHE\n");
             }
@@ -174,6 +174,7 @@ void recvFromClient(DNSRD_RUNTIME *runtime) {
                     inet_ntop(AF_INET, &clientAddr.sin_addr, clientIp, sizeof(clientIp));
                     printf("C<< Send packet back to client %s:%d\n", clientIp, ntohs(clientAddr.sin_port));
                     DNSPacket_print(&packet);
+                    printf("CACHE SIZE %d\n", runtime->lruCache->size);
                 }
                 packet.header.ra = 1;
                 buffer = DNSPacket_encode(packet);
@@ -227,6 +228,7 @@ void recvFromUpstream(DNSRD_RUNTIME *runtime) {
         inet_ntop(AF_INET, &client.addr.sin_addr, clientIp, sizeof(clientIp));
         printf("C<< Send packet back to client %s:%d\n", clientIp, ntohs(client.addr.sin_port));
         DNSPacket_print(&packet);
+        printf("CACHE SIZE %d\n", runtime->lruCache->size);
     }
     Buffer bufferTmp;
     bufferTmp = DNSPacket_encode(packet);
@@ -271,6 +273,13 @@ void recvFromUpstream(DNSRD_RUNTIME *runtime) {
             }
         }
         lRUCachePut(runtime->lruCache, cacheKey, cacheItem);
+        writeCache(runtime->config.cachefile, runtime);
+        if (runtime->config.debug) {
+            printf("ADDED TO CACHE\n");
+        }
+    }
+    if (runtime->config.debug) {
+        printf("CACHE SIZE %d\n", runtime->lruCache->size);
     }
     // 用完销毁
     free(buffer.data);
