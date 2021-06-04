@@ -2,6 +2,7 @@
 #include "cli.h"
 #include "config.h"
 #include "idTransfer.h"
+#include "loadCache.h"
 #include <WS2tcpip.h>
 #include <WinSock2.h>
 #define SIO_UDP_CONNRESET _WSAIOW(IOC_VENDOR, 12)
