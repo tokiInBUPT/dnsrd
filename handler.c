@@ -128,7 +128,7 @@ void recvFromClient(DNSRD_RUNTIME *runtime) {
     }
     // 若能查询先查询本地缓存
     if (checkCacheable(packet.questions->qtype)) {
-        Key key;                                   //
+        Key key; //
         key.qtype = packet.questions->qtype;
         strcpy_s(key.name, 256, packet.questions[0].name);
         MyData myData = lRUCacheGet(runtime->lruCache, key);
@@ -228,7 +228,6 @@ void recvFromUpstream(DNSRD_RUNTIME *runtime) {
         inet_ntop(AF_INET, &client.addr.sin_addr, clientIp, sizeof(clientIp));
         printf("C<< Send packet back to client %s:%d\n", clientIp, ntohs(client.addr.sin_port));
         DNSPacket_print(&packet);
-        printf("CACHE SIZE %d\n", runtime->lruCache->size);
     }
     Buffer bufferTmp;
     bufferTmp = DNSPacket_encode(packet);
