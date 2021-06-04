@@ -38,7 +38,7 @@ void HeadInsertion(struct node *head, struct node *cur) { //双链表头插法
 }
 
 LRUCache *lRUCacheCreate(int capacity) {
-    if (capacity <= 0) { //传参检查
+    if (capacity <= 0) {
         return NULL;
     }
     LRUCache *obj = (LRUCache *)malloc(sizeof(LRUCache));
@@ -46,12 +46,12 @@ LRUCache *lRUCacheCreate(int capacity) {
     memset(obj->table, 0, capacity * sizeof(struct hash));
     obj->head = (struct node *)malloc(sizeof(struct node));
     obj->tail = (struct node *)malloc(sizeof(struct node));
-    //创建头、尾结点并初始化
+    //创建链表头、尾结点并初始化
     obj->head->prev = NULL;
     obj->head->next = obj->tail;
     obj->tail->prev = obj->head;
     obj->tail->next = NULL;
-    //初始化缓存 大小 和 容量
+    //初始化哈希表容量和链表大小
     obj->size = 0;
     obj->capacity = capacity;
     return obj;
@@ -122,8 +122,7 @@ void lRUCachePut(LRUCache *obj, Key key, MyData value) {
             HeadInsertion(obj->head, new_node->recordNode); //更新最近使用的数据
             ++(obj->size);                                  //缓存大小+1
         }
-    } else {                            //密钥已存在
-                                        // lRUCacheGet 函数已经更新双链表表头，故此处不用更新
+    } else {                            //关键词已存在
         obj->head->next->value = value; //替换数据值
     }
 }

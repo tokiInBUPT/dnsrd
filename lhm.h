@@ -18,26 +18,26 @@ typedef struct MyData {
     DNSRecord *answers;   //改数据项中的资源信息（例如IP地址、域名等）
 } MyData;
 
-/*LRU中的结点*/
+/*包含资源项的结点*/
 struct node {
     Key key;           //关键码
     MyData value;      //结点中的数据
     struct node *prev; //前指针
     struct node *next; //后指针
 };                     //双向链表
-
+/*哈希表中的结点*/
 struct hash {
-    struct node *recordNode; //数据的未使用时长
-    struct hash *next;       //拉链法解决哈希冲突
-};                           //哈希表结构
-
+    struct node *recordNode; //指向包含资源信息的链表结点
+    struct hash *next;       //拉链法解决冲突
+};                           //哈希表表项
+/*LRUCache*/
 typedef struct {
     int size;           //当前缓存大小
     int capacity;       //缓存容量
     struct hash *table; //哈希表
-    //维护一个双向链表用于记录 数据的未使用时长
-    struct node *head; //后继 指向 最近使用的数据
-    struct node *tail; //前驱 指向 最久未使用的数据
+    /*双向链表，保存所有资源信息，溢出时采用LRU方法从尾部删除*/
+    struct node *head; //头结点，后继指向最近更新的数据
+    struct node *tail; //尾结点，前驱指向最久未更新的数据，溢出时优先删除此结点（前提是他不是host中的）
 } LRUCache;
 
 /*
