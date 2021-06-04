@@ -14,10 +14,11 @@ BOOL WINAPI consoleHandler(DWORD signal) {
 }
 
 int main(int argc, char *argv[]) {
-    cliHead(); //打印标题
+    /* 打印标题  */
+    cliHead();
     /* 从命令行参数获取配置信息  */
     DNSRD_CONFIG config = initConfig(argc, argv);
-    /* 初始化ID转换表和红黑树  */
+    /* 初始化ID转换表和Linked Hash Map  */
     runtime = initRuntime(&config);
     /* 初始化Socket */
     initSocket(&runtime);
