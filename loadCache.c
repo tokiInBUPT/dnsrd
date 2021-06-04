@@ -48,8 +48,8 @@ void loadCache(char *fname, DNSRD_RUNTIME *runtime) {
             //free(val);
             for (int j = 0; j < value.answers[i].rdataLength; j++) {
                 char *tmp = (char *)malloc(sizeof(char) * 3);
-                sscanf(rdata + 3 * j, "%2x", &tmp);
-                value.answers[i].rdata[j] = tmp;
+                sscanf(rdata + 3 * j, "%2x", tmp);
+                value.answers[i].rdata[j] = *tmp;
             }
             val = yyjson_obj_get(answerItemJson, "rdataName");
             strcpy_s(value.answers[i].rdataName, 256, yyjson_get_str(val));
@@ -85,7 +85,7 @@ void writeCache(char *fname, DNSRD_RUNTIME *runtime) {
             int j;
             for (j = 0; j < head->value.answers[i].rdataLength; j++) {
                 char hex[3];
-                sprintf(hex, "%02x ", head->value.answers[i].rdata[j]);
+                sprintf(hex, "%02x ", (unsigned char)head->value.answers[i].rdata[j]);
                 strcat(rdata, hex);
             }
             rdata[3 * j] = '\0';
