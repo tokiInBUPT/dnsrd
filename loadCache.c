@@ -12,48 +12,37 @@ void loadCache(char *fname, DNSRD_RUNTIME *runtime) {
         yyjson_val *valueJson = yyjson_obj_get(objectItem, "value");
         yyjson_val *val = yyjson_obj_get(keyJson, "qtype");
         key.qtype = (DNSQType)yyjson_get_uint(val);
-        //free(val);
         val = yyjson_obj_get(keyJson, "name");
         strcpy_s(key.name, 256, yyjson_get_str(val));
-        //free(val);
         val = yyjson_obj_get(valueJson, "time");
         value.time = yyjson_get_uint(val);
-        //free(val);
         val = yyjson_obj_get(valueJson, "answerCount");
         value.answerCount = (uint32_t)yyjson_get_uint(val);
-        //free(val);
         yyjson_val *answers = yyjson_obj_get(valueJson, "answers");
         value.answers = (DNSRecord *)malloc(sizeof(DNSRecord) * (value.answerCount));
         for (uint64_t i = 0; i < value.answerCount; i++) {
             yyjson_val *answerItemJson = yyjson_arr_get(answers, i);
             val = yyjson_obj_get(answerItemJson, "name");
             strcpy_s(value.answers[i].name, 256, yyjson_get_str(val));
-            //free(val);
             val = yyjson_obj_get(answerItemJson, "rclass");
             value.answers[i].rclass = yyjson_get_uint(val);
-            //free(val);
             val = yyjson_obj_get(answerItemJson, "rdataLength");
             value.answers[i].rdataLength = (uint16_t)yyjson_get_uint(val);
             value.answers[i].rdata = (char *)malloc(sizeof(char) * value.answers[i].rdataLength);
-            //free(val);
             val = yyjson_obj_get(answerItemJson, "ttl");
             value.answers[i].ttl = (uint32_t)yyjson_get_uint(val);
-            //free(val);
             val = yyjson_obj_get(answerItemJson, "type");
             value.answers[i].type = yyjson_get_uint(val);
-            //free(val);
             val = yyjson_obj_get(answerItemJson, "rdata");
             char rdata[4096] = "";
             strcpy_s(rdata, 4096, yyjson_get_str(val));
-            //free(val);
             for (int j = 0; j < value.answers[i].rdataLength; j++) {
                 char *tmp = (char *)malloc(sizeof(char) * 3);
-                sscanf(rdata + 3 * j, "%2x", &tmp);
-                value.answers[i].rdata[j] = tmp;
+                sscanf(rdata + 3 * j, "%2x", tmp);
+                value.answers[i].rdata[j] = *tmp;
             }
             val = yyjson_obj_get(answerItemJson, "rdataName");
             strcpy_s(value.answers[i].rdataName, 256, yyjson_get_str(val));
-            //free(val);
         }
         lRUCachePut(runtime->lruCache, key, value);
     }
@@ -85,7 +74,7 @@ void writeCache(char *fname, DNSRD_RUNTIME *runtime) {
             int j;
             for (j = 0; j < head->value.answers[i].rdataLength; j++) {
                 char hex[3];
-                sprintf(hex, "%02x ", head->value.answers[i].rdata[j]);
+                sprintf(hex, "%02x ", (unsigned char)head->value.answers[i].rdata[j]);
                 strcat(rdata, hex);
             }
             rdata[3 * j] = '\0';
