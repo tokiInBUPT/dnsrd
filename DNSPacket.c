@@ -685,34 +685,10 @@ void DNSPacket_print(DNSPacket *packet) {
         char res[256];
         switch (packet->answers[i].type) {
         case A:
-            // printf("\tAddress: %d.%d.%d.%d\n",
-            //        (unsigned char)*(packet->answers[i].rdata),
-            //        (unsigned char)*(packet->answers[i].rdata + 1),
-            //        (unsigned char)*(packet->answers[i].rdata + 2),
-            //        (unsigned char)*(packet->answers[i].rdata + 3));
-            // 不知道对不对，没法测，先写着
             inet_ntop(AF_INET, packet->answers[i].rdata, res, 256);
             printf("\tAddress: %s\n", res);
             break;
         case AAAA:
-            // printf("\tAAAA Address: %x%02x:%x%02x:%x%02x:%x%02x:%x%02x:%x%02x:%x%02x:%x%02x\n",
-            //        (unsigned char)*((unsigned char *)packet->answers[i].rdata),
-            //        (unsigned char)*((unsigned char *)packet->answers[i].rdata + 1),
-            //        (unsigned char)*((unsigned char *)packet->answers[i].rdata + 2),
-            //        (unsigned char)*((unsigned char *)packet->answers[i].rdata + 3),
-            //        (unsigned char)*((unsigned char *)packet->answers[i].rdata + 4),
-            //        (unsigned char)*((unsigned char *)packet->answers[i].rdata + 5),
-            //        (unsigned char)*((unsigned char *)packet->answers[i].rdata + 6),
-            //        (unsigned char)*((unsigned char *)packet->answers[i].rdata + 7),
-            //        (unsigned char)*((unsigned char *)packet->answers[i].rdata + 8),
-            //        (unsigned char)*((unsigned char *)packet->answers[i].rdata + 9),
-            //        (unsigned char)*((unsigned char *)packet->answers[i].rdata + 10),
-            //        (unsigned char)*((unsigned char *)packet->answers[i].rdata + 11),
-            //        (unsigned char)*((unsigned char *)packet->answers[i].rdata + 12),
-            //        (unsigned char)*((unsigned char *)packet->answers[i].rdata + 13),
-            //        (unsigned char)*((unsigned char *)packet->answers[i].rdata + 14),
-            //        (unsigned char)*((unsigned char *)packet->answers[i].rdata + 15));
-            // 不知道对不对，没法测，先写着
             inet_ntop(AF_INET6, packet->answers[i].rdata, res, 256);
             printf("\tAAAA Address: %s\n", res);
             break;
