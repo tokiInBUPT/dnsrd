@@ -157,13 +157,22 @@ Buffer DNSPacket_encode(DNSPacket packet) {
     buffer.length = (uint32_t)(data - buffer.data);
     return buffer;
 }
-DNSPacket DNSPacket_decode(Buffer buffer) {
+
+DNSPacket DNSPacket_decode(Buffer *buffer) {
     DNSPacket packet;
-    uint8_t *data = buffer.data;
+    uint8_t *data = buffer->data;
     uint8_t tmp8;
     data = _read16(data, &packet.header.id);
+    if (data > buffer->data + buffer->length) {
+        buffer->length = 0;
+        return packet;
+    }
     /* QR+OP+AA+TC+RD */
     data = _read8(data, &tmp8);
+    if (data > buffer->data + buffer->length) {
+        buffer->length = 0;
+        return packet;
+    }
     packet.header.qr = (DNSPacketQR)(tmp8 >> 7 & 0x01);
     packet.header.opcode = (DNSPacketOP)(tmp8 >> 3 & 0x0F);
     packet.header.aa = tmp8 >> 2 & 0x01;
@@ -171,22 +180,57 @@ DNSPacket DNSPacket_decode(Buffer buffer) {
     packet.header.rd = tmp8 >> 0 & 0x01;
     /* RA+padding(3)+RCODE */
     data = _read8(data, &tmp8);
+    if (data > buffer->data + buffer->length) {
+        buffer->length = 0;
+        return packet;
+    }
     packet.header.ra = tmp8 >> 7 & 0x01;
     packet.header.rcode = (DNSPacketRC)(tmp8 & 0xF);
     /* Counts */
     data = _read16(data, &packet.header.questionCount);
+    if (data > buffer->data + buffer->length) {
+        buffer->length = 0;
+        return packet;
+    }
     data = _read16(data, &packet.header.answerCount);
+    if (data > buffer->data + buffer->length) {
+        buffer->length = 0;
+        return packet;
+    }
     data = _read16(data, &packet.header.authorityCount);
+    if (data > buffer->data + buffer->length) {
+        buffer->length = 0;
+        return packet;
+    }
     data = _read16(data, &packet.header.additionalCount);
+    if (data > buffer->data + buffer->length) {
+        buffer->length = 0;
+        return packet;
+    }
     /* Questions */
     packet.questions = (DNSQuestion *)malloc(sizeof(DNSQuestion) * packet.header.questionCount);
     for (int i = 0; i < packet.header.questionCount; i++) {
         DNSQuestion *r = &packet.questions[i];
-        data += decodeQname((char *)data, (char *)buffer.data, r->name);
+        data += decodeQname((char *)data, (char *)buffer->data, r->name);
+        if (data > buffer->data + buffer->length) {
+            buffer->length = 0;
+            free(packet.questions);
+            return packet;
+        }
         uint16_t tmp;
         data = _read16(data, &tmp);
+        if (data > buffer->data + buffer->length) {
+            buffer->length = 0;
+            free(packet.questions);
+            return packet;
+        }
         r->qtype = (DNSQType)tmp;
         data = _read16(data, &tmp);
+        if (data > buffer->data + buffer->length) {
+            buffer->length = 0;
+            free(packet.questions);
+            return packet;
+        }
         r->qclass = (DNSQClass)tmp;
     }
     /* Answers */
@@ -194,21 +238,66 @@ DNSPacket DNSPacket_decode(Buffer buffer) {
         packet.answers = (DNSRecord *)malloc(sizeof(DNSRecord) * packet.header.answerCount);
         for (int i = 0; i < packet.header.answerCount; i++) {
             DNSRecord *r = &packet.answers[i];
-            data += decodeQname((char *)data, (char *)buffer.data, r->name);
+            data += decodeQname((char *)data, (char *)buffer->data, r->name);
+            if (data > buffer->data + buffer->length) {
+                buffer->length = 0;
+                free(packet.questions);
+                for (int j = 0; j < i; j++) {
+                    free(packet.answers[i].rdata);
+                }
+                free(packet.answers);
+                return packet;
+            }
             uint16_t tmp;
             data = _read16(data, &tmp);
+            if (data > buffer->data + buffer->length) {
+                buffer->length = 0;
+                free(packet.questions);
+                for (int j = 0; j < i; j++) {
+                    free(packet.answers[i].rdata);
+                }
+                free(packet.answers);
+                return packet;
+            }
             r->type = (DNSQType)tmp;
             data = _read16(data, &tmp);
+            if (data > buffer->data + buffer->length) {
+                buffer->length = 0;
+                free(packet.questions);
+                for (int j = 0; j < i; j++) {
+                    free(packet.answers[i].rdata);
+                }
+                free(packet.answers);
+                return packet;
+            }
             r->rclass = (DNSQClass)tmp;
             data = _read32(data, &r->ttl);
+            if (data > buffer->data + buffer->length) {
+                buffer->length = 0;
+                free(packet.questions);
+                for (int j = 0; j < i; j++) {
+                    free(packet.answers[i].rdata);
+                }
+                free(packet.answers);
+                return packet;
+            }
             data = _read16(data, &r->rdataLength);
+            if (data > buffer->data + buffer->length) {
+                buffer->length = 0;
+                free(packet.questions);
+                for (int j = 0; j < i; j++) {
+                    free(packet.answers[i].rdata);
+                }
+                free(packet.answers);
+                return packet;
+            }
             r->rdata = (char *)malloc(sizeof(char) * r->rdataLength);
             memcpy(r->rdata, data, r->rdataLength);
             switch (r->type) {
             case NS:
             case CNAME:
             case PTR: {
-                decodeQname((char *)data, (char *)buffer.data, r->rdataName);
+                decodeQname((char *)data, (char *)buffer->data, r->rdataName);
                 break;
             }
             default: {
@@ -226,14 +315,79 @@ DNSPacket DNSPacket_decode(Buffer buffer) {
         packet.authorities = (DNSRecord *)malloc(sizeof(DNSRecord) * packet.header.authorityCount);
         for (int i = 0; i < packet.header.authorityCount; i++) {
             DNSRecord *r = &packet.authorities[i];
-            data += decodeQname((char *)data, (char *)buffer.data, r->name);
+            data += decodeQname((char *)data, (char *)buffer->data, r->name);
+            if (data > buffer->data + buffer->length) {
+                buffer->length = 0;
+                free(packet.questions);
+                for (int j = 0; j < packet.header.answerCount; j++) {
+                    free(packet.answers[i].rdata);
+                }
+                free(packet.answers);
+                for (int j = 0; j < i; j++) {
+                    free(packet.authorities[i].rdata);
+                }
+                free(packet.authorities);
+                return packet;
+            }
             uint16_t tmp;
             data = _read16(data, &tmp);
+            if (data > buffer->data + buffer->length) {
+                buffer->length = 0;
+                free(packet.questions);
+                for (int j = 0; j < packet.header.answerCount; j++) {
+                    free(packet.answers[i].rdata);
+                }
+                free(packet.answers);
+                for (int j = 0; j < i; j++) {
+                    free(packet.authorities[i].rdata);
+                }
+                free(packet.authorities);
+                return packet;
+            }
             r->type = (DNSQType)tmp;
             data = _read16(data, &tmp);
+            if (data > buffer->data + buffer->length) {
+                buffer->length = 0;
+                free(packet.questions);
+                for (int j = 0; j < packet.header.answerCount; j++) {
+                    free(packet.answers[i].rdata);
+                }
+                free(packet.answers);
+                for (int j = 0; j < i; j++) {
+                    free(packet.authorities[i].rdata);
+                }
+                free(packet.authorities);
+                return packet;
+            }
             r->rclass = (DNSQClass)tmp;
             data = _read32(data, &r->ttl);
+            if (data > buffer->data + buffer->length) {
+                buffer->length = 0;
+                free(packet.questions);
+                for (int j = 0; j < packet.header.answerCount; j++) {
+                    free(packet.answers[i].rdata);
+                }
+                free(packet.answers);
+                for (int j = 0; j < i; j++) {
+                    free(packet.authorities[i].rdata);
+                }
+                free(packet.authorities);
+                return packet;
+            }
             data = _read16(data, &r->rdataLength);
+            if (data > buffer->data + buffer->length) {
+                buffer->length = 0;
+                free(packet.questions);
+                for (int j = 0; j < packet.header.answerCount; j++) {
+                    free(packet.answers[i].rdata);
+                }
+                free(packet.answers);
+                for (int j = 0; j < i; j++) {
+                    free(packet.authorities[i].rdata);
+                }
+                free(packet.authorities);
+                return packet;
+            }
             r->rdata = (char *)malloc(sizeof(char) * r->rdataLength);
             memcpy(r->rdata, data, r->rdataLength);
             data += r->rdataLength;
@@ -246,14 +400,99 @@ DNSPacket DNSPacket_decode(Buffer buffer) {
         packet.additional = (DNSRecord *)malloc(sizeof(DNSRecord) * packet.header.additionalCount);
         for (int i = 0; i < packet.header.additionalCount; i++) {
             DNSRecord *r = &packet.additional[i];
-            data += decodeQname((char *)data, (char *)buffer.data, r->name);
+            data += decodeQname((char *)data, (char *)buffer->data, r->name);
+            if (data > buffer->data + buffer->length) {
+                buffer->length = 0;
+                free(packet.questions);
+                for (int j = 0; j < packet.header.answerCount; j++) {
+                    free(packet.answers[i].rdata);
+                }
+                free(packet.answers);
+                for (int j = 0; j < packet.header.authorityCount; j++) {
+                    free(packet.authorities[i].rdata);
+                }
+                free(packet.authorities);
+                for (int j = 0; j < i; j++) {
+                    free(packet.additional[i].rdata);
+                }
+                free(packet.additional);
+                return packet;
+            }
             uint16_t tmp;
             data = _read16(data, &tmp);
+            if (data > buffer->data + buffer->length) {
+                buffer->length = 0;
+                free(packet.questions);
+                for (int j = 0; j < packet.header.answerCount; j++) {
+                    free(packet.answers[i].rdata);
+                }
+                free(packet.answers);
+                for (int j = 0; j < packet.header.authorityCount; j++) {
+                    free(packet.authorities[i].rdata);
+                }
+                free(packet.authorities);
+                for (int j = 0; j < i; j++) {
+                    free(packet.additional[i].rdata);
+                }
+                free(packet.additional);
+                return packet;
+            }
             r->type = (DNSQType)tmp;
             data = _read16(data, &tmp);
+            if (data > buffer->data + buffer->length) {
+                buffer->length = 0;
+                free(packet.questions);
+                for (int j = 0; j < packet.header.answerCount; j++) {
+                    free(packet.answers[i].rdata);
+                }
+                free(packet.answers);
+                for (int j = 0; j < packet.header.authorityCount; j++) {
+                    free(packet.authorities[i].rdata);
+                }
+                free(packet.authorities);
+                for (int j = 0; j < i; j++) {
+                    free(packet.additional[i].rdata);
+                }
+                free(packet.additional);
+                return packet;
+            }
             r->rclass = (DNSQClass)tmp;
             data = _read32(data, &r->ttl);
+            if (data > buffer->data + buffer->length) {
+                buffer->length = 0;
+                free(packet.questions);
+                for (int j = 0; j < packet.header.answerCount; j++) {
+                    free(packet.answers[i].rdata);
+                }
+                free(packet.answers);
+                for (int j = 0; j < packet.header.authorityCount; j++) {
+                    free(packet.authorities[i].rdata);
+                }
+                free(packet.authorities);
+                for (int j = 0; j < i; j++) {
+                    free(packet.additional[i].rdata);
+                }
+                free(packet.additional);
+                return packet;
+            }
             data = _read16(data, &r->rdataLength);
+            if (data > buffer->data + buffer->length) {
+                buffer->length = 0;
+                free(packet.questions);
+                for (int j = 0; j < packet.header.answerCount; j++) {
+                    free(packet.answers[i].rdata);
+                }
+                free(packet.answers);
+                for (int j = 0; j < packet.header.authorityCount; j++) {
+                    free(packet.authorities[i].rdata);
+                }
+                free(packet.authorities);
+                for (int j = 0; j < i; j++) {
+                    free(packet.additional[i].rdata);
+                }
+                free(packet.additional);
+                return packet;
+            }
             r->rdata = (char *)malloc(sizeof(char) * r->rdataLength);
             memcpy(r->rdata, data, r->rdataLength);
             data += r->rdataLength;

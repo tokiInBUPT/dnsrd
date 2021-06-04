@@ -145,7 +145,7 @@ void DNSPacket_destroy(DNSPacket packet);
 /*
  * Buffer转结构体
  */
-DNSPacket DNSPacket_decode(Buffer buffer);
+DNSPacket DNSPacket_decode(Buffer *buffer);
 /*
  * 填充发送包的基本属性
  */

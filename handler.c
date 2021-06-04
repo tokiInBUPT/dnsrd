@@ -66,10 +66,24 @@ DNSPacket recvDNSPacket(DNSRD_RUNTIME *runtime, SOCKET socket, Buffer *buffer, s
         packet.header.authorityCount = 0;
         return packet; //返回空包
     }
-    buffer->length = ret;                         //接收成功
-    *error = ret;                                 //给函数调用者的标识
-    DNSPacket packet = DNSPacket_decode(*buffer); //将buffer的数据转成packet
-    if (runtime->config.debug) {                  //debug信息
+    buffer->length = ret;                        //接收成功
+    *error = ret;                                //给函数调用者的标识
+    DNSPacket packet = DNSPacket_decode(buffer); //将buffer的数据转成packet
+    if (buffer->length == 0) {
+        printf("Error: Packet invalid\n");
+        *error = -2; //给函数调用者的标识
+        DNSPacket packet;
+        packet.answers = NULL;
+        packet.questions = NULL;
+        packet.additional = NULL;
+        packet.authorities = NULL;
+        packet.header.questionCount = 0;
+        packet.header.answerCount = 0;
+        packet.header.additionalCount = 0;
+        packet.header.authorityCount = 0;
+        return packet; //返回空包
+    }
+    if (runtime->config.debug) { //debug信息
         if (socket == runtime->server) {
             char clientIp[16];
             inet_ntop(AF_INET, &clientAddr->sin_addr, clientIp, sizeof(clientIp));
@@ -222,6 +236,11 @@ void recvFromUpstream(DNSRD_RUNTIME *runtime) {
     Buffer buffer = makeBuffer(DNS_PACKET_SIZE);
     int status = 0;
     DNSPacket packet = recvDNSPacket(runtime, runtime->client, &buffer, &runtime->upstreamAddr, &status);
+    if (status <= 0) {
+        // 接收失败 - 空包，甚至不需要destroy。
+        free(buffer.data);
+        return;
+    }
     // 解析后原数据就已经不需要了
     // 还原id(多个请求方的情况)
     IdMap client = getIdMap(runtime->idmap, packet.header.id);
