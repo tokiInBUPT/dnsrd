@@ -706,11 +706,7 @@ void DNSPacket_print(DNSPacket *packet) {
             printf("\tTXT: %s\n", packet->answers[i].rdata + 1);
             break;
         default:
-            printf("\tNot A or AAAA or CNAME: ");
-            for (int i = 0; i < packet->answers[i].rdataLength; i++) {
-                printf("%x", packet->answers[i].rdata[i]);
-            }
-            printf("\n");
+            printf("\tUnknown RR Type.\n");
         }
     }
     printf("\n");

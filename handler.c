@@ -100,7 +100,7 @@ DNSPacket recvDNSPacket(DNSRD_RUNTIME *runtime, SOCKET socket, Buffer *buffer, s
  * 判断是否可以缓存
  */
 int checkCacheable(DNSQType type) {
-    if (type == A || type == AAAA || type == CNAME || type == PTR || type == NS || type == TXT) {
+    if (type == A || type == AAAA || type == CNAME || type == PTR || type == NS || type == TXT || type == MX) {
         return 1;
     }
     return 0;
