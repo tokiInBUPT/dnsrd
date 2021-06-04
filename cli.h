@@ -21,6 +21,7 @@ typedef struct DNSRD_RUNTIME {
     struct sockaddr_in listenAddr;   //监听地址（请求方地址IP+端口
     struct sockaddr_in upstreamAddr; //上级DNS服务器地址（IP+端口）
     int quit;                        //退出是否已经被触发
+    int totalCount;
 } DNSRD_RUNTIME;
 DNSRD_CONFIG initConfig(int argc, char *argv[]);
 DNSRD_RUNTIME initRuntime(DNSRD_CONFIG *config);
