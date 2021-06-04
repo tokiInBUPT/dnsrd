@@ -8,7 +8,7 @@ DNSRD_RUNTIME runtime;
 
 /* 按Ctrl+C退出时需要释放内存 */
 BOOL WINAPI consoleHandler(DWORD signal) {
-    printf("Quitting...");
+    printf("Quitting...\n");
     destroyRuntime(&runtime);
     exit(0);
 }
