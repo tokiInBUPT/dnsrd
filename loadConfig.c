@@ -42,7 +42,7 @@ void loadConfig(char *fname, LRUCache *lruCache) {
             record.type = key.qtype;
             record.ttl = 0;
             if (flag_v6) {
-                record.rdata = (char *)malloc(sizeof(uint8_t) * 8);
+                record.rdata = (char *)malloc(sizeof(uint8_t) * 16);
                 struct in6_addr ipv6data;
                 inet_pton(AF_INET6, buf1, &ipv6data);
                 int flag_nxdomain = 1;
@@ -56,8 +56,8 @@ void loadConfig(char *fname, LRUCache *lruCache) {
                     record.rdata = NULL;
                     record.rdataLength = 0;
                 } else {
-                    memcpy(record.rdata, ipv6data.u.Byte, sizeof(uint8_t) * 8);
-                    record.rdataLength = sizeof(uint8_t) * 8;
+                    memcpy(record.rdata, ipv6data.u.Byte, sizeof(uint8_t) * 16);
+                    record.rdataLength = sizeof(uint8_t) * 16;
                 }
             } else {
                 record.rdata = (char *)malloc(sizeof(uint8_t) * 4);
