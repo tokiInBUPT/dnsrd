@@ -15,6 +15,7 @@
         "loadconfig.h": "c",
         "cli.h": "c",
         "loadcache.h": "c",
-        "lhm.h": "c"
+        "lhm.h": "c",
+        "handler.h": "c"
     }
 }
