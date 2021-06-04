@@ -57,7 +57,7 @@ void loadCache(char *fname, DNSRD_RUNTIME *runtime) {
         }
         lRUCachePut(runtime->lruCache, key, value);
     }
-    printf("Cache file loaded, size id %d\n", runtime->lruCache->size);
+    printf("Cache file loaded, cache size id %d\n", runtime->lruCache->size);
 }
 
 void writeCache(char *fname, DNSRD_RUNTIME *runtime) {

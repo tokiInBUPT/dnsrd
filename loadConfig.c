@@ -81,5 +81,5 @@ void loadConfig(char *fname, LRUCache *lruCache) {
             lRUCachePut(lruCache, key, myData);
         }
     }
-    printf("Config file loaded, size is %d\n", lruCache->size);
+    printf("Config file loaded, cache size is %d\n", lruCache->size);
 }
