@@ -127,17 +127,18 @@ void recvFromClient(DNSRD_RUNTIME *runtime) {
         return;
     }
     // 若能查询先查询本地缓存
-    if (checkCacheable(packet.questions->qtype)) {
-        Key key;                                   //
+    if (checkCacheable(packet.questions->qtype)) { //规定了可以接受的查询类型
+        Key key;
         key.qtype = packet.questions->qtype;
         strcpy_s(key.name, 256, packet.questions[0].name);
         MyData myData = lRUCacheGet(runtime->lruCache, key);
         uint32_t cacheTime = (uint32_t)(time(NULL) - myData.time);
-        if (myData.answerCount > 0) {
+        if (myData.answerCount > 0) { //若查询到了结果
             if (runtime->config.debug) {
                 printf("HIT CACHE\n");
             }
             int TTLTimeout = 0;
+            /*检查是否超时*/
             for (uint16_t i = 0; i < myData.answerCount; i++) {
                 if (myData.time > 0 && cacheTime > myData.answers[i].ttl) {
                     // 任何一个过期都算过期
@@ -145,7 +146,8 @@ void recvFromClient(DNSRD_RUNTIME *runtime) {
                     break;
                 }
             }
-            if (!TTLTimeout) { //未过期
+            if (!TTLTimeout) { //仍处于有效期
+                /*准备回应包*/
                 packet.header.rcode = OK;
                 packet.header.qr = QRRESPONSE;
                 packet.header.answerCount = myData.answerCount;
@@ -190,8 +192,8 @@ void recvFromClient(DNSRD_RUNTIME *runtime) {
             }
         }
     }
-    // 缓存未命中或者不支持，转走
-    // ID转换
+    // 缓存未命中或者不支持，则向上级查询
+    // 需要对ID进行转换（防止目标相同的查询）
     IdMap mapItem;
     mapItem.addr = clientAddr;
     mapItem.originalId = packet.header.id;
@@ -219,7 +221,7 @@ void recvFromUpstream(DNSRD_RUNTIME *runtime) {
     int status = 0;
     DNSPacket packet = recvDNSPacket(runtime, runtime->client, &buffer, &runtime->upstreamAddr, &status);
     // 解析后原数据就已经不需要了
-    // 还原id
+    // 还原id(多个请求方的情况)
     IdMap client = getIdMap(runtime->idmap, packet.header.id);
     packet.header.id = client.originalId;
     // 发走
@@ -236,10 +238,12 @@ void recvFromUpstream(DNSRD_RUNTIME *runtime) {
         buffer.data[i] = bufferTmp.data[i];
     }
     free(bufferTmp.data);
+    /*将查询结果返回给client*/
     status = sendto(runtime->server, (char *)buffer.data, buffer.length, 0, (struct sockaddr *)&client.addr, sizeof(client.addr));
     if (status < 0) {
         printf("Error sendto: %d\n", WSAGetLastError());
     }
+    /*判断是否应该缓存*/
     int shouldCache = 1;
     if (packet.header.rcode != OK || !checkCacheable(packet.questions->qtype)) {
         shouldCache = 0;
@@ -253,6 +257,7 @@ void recvFromUpstream(DNSRD_RUNTIME *runtime) {
         cacheItem.time = time(NULL);
         cacheItem.answerCount = packet.header.answerCount;
         cacheItem.answers = (DNSRecord *)malloc(sizeof(DNSRecord) * packet.header.answerCount);
+        /*准备缓存项*/
         for (uint16_t i = 0; i < packet.header.answerCount; i++) {
             DNSRecord *newRecord = &cacheItem.answers[i];
             DNSRecord *old = &packet.answers[i];
@@ -272,8 +277,8 @@ void recvFromUpstream(DNSRD_RUNTIME *runtime) {
                 newRecord->rdataName[0] = '\0';
             }
         }
-        lRUCachePut(runtime->lruCache, cacheKey, cacheItem);
-        writeCache(runtime->config.cachefile, runtime);
+        lRUCachePut(runtime->lruCache, cacheKey, cacheItem); //写入缓存
+        writeCache(runtime->config.cachefile, runtime);      //保存cache文件
         if (runtime->config.debug) {
             printf("ADDED TO CACHE\n");
         }
