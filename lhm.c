@@ -65,12 +65,12 @@ MyData lRUCacheGet(LRUCache *obj, Key key) {
         tmp.answerCount = Nothingness;
         return tmp; //返回空结果
     }
-    while (addr->next != NULL && !same_key(addr->unused->key, key)) { //寻找密钥是否存在
+    while (addr->next != NULL && !same_key(addr->recordNode->key, key)) { //寻找密钥是否存在
         addr = addr->next;
     }
-    if (same_key(addr->unused->key, key)) {     //查找成功
-        HeadInsertion(obj->head, addr->unused); //更新至表头
-        return addr->unused->value;
+    if (same_key(addr->recordNode->key, key)) {     //查找成功
+        HeadInsertion(obj->head, addr->recordNode); //更新至表头
+        return addr->recordNode->value;
     }
     MyData tmp;
     tmp.answerCount = Nothingness; //未查找成功
@@ -92,35 +92,35 @@ void lRUCachePut(LRUCache *obj, Key key, MyData value) {
             //end
             struct hash *remove = HashMap(obj->table, last->key, obj->capacity); //舍弃结点的哈希地址
             struct hash *ptr = remove;
-            remove = remove->next;                                              //跳过头结点
-            while (remove->next && !same_key(remove->unused->key, last->key)) { //找到最久未使用结点的前一个结点
+            remove = remove->next;                                                  //跳过头结点
+            while (remove->next && !same_key(remove->recordNode->key, last->key)) { //找到最久未使用结点的前一个结点
                 ptr = remove;
                 remove = remove->next;
             }
             ptr->next = remove->next; //在hash table[last->key % capacity] 链表中删除最久未使用的hash结点
-            free(remove->unused->value.answers);
+            free(remove->recordNode->value.answers);
             remove->next = NULL;
-            remove->unused = NULL; //解除映射
-            free(remove);          //回收hash结点资源
+            remove->recordNode = NULL; //解除映射
+            free(remove);              //回收hash结点资源
             struct hash *new_node = (struct hash *)malloc(sizeof(struct hash));
             new_node->next = addr->next; //连接到 table[key % capacity] 的链表中
             addr->next = new_node;
-            new_node->unused = last; //最大化利用双链表中的结点，对其重映射(节约空间)
-            last->key = key;         //重新赋值
+            new_node->recordNode = last; //最大化利用双链表中的结点，对其重映射(节约空间)
+            last->key = key;             //重新赋值
             last->value = value;
             HeadInsertion(obj->head, last); //更新最近使用的数据
         } else {                            //缓存未达上限
             //创建(密钥\数据)结点,并建立映射
             struct hash *new_node = (struct hash *)malloc(sizeof(struct hash));
-            new_node->unused = (struct node *)malloc(sizeof(struct node));
+            new_node->recordNode = (struct node *)malloc(sizeof(struct node));
             new_node->next = addr->next; //连接到 table[key % capacity] 的链表中
             addr->next = new_node;
-            new_node->unused->prev = NULL; //标记该结点是新创建的,不在双向链表中
-            new_node->unused->next = NULL;
-            new_node->unused->key = key;                //插入密钥
-            new_node->unused->value = value;            //插入数据
-            HeadInsertion(obj->head, new_node->unused); //更新最近使用的数据
-            ++(obj->size);                              //缓存大小+1
+            new_node->recordNode->prev = NULL; //标记该结点是新创建的,不在双向链表中
+            new_node->recordNode->next = NULL;
+            new_node->recordNode->key = key;                //插入密钥
+            new_node->recordNode->value = value;            //插入数据
+            HeadInsertion(obj->head, new_node->recordNode); //更新最近使用的数据
+            ++(obj->size);                                  //缓存大小+1
         }
     } else {                            //密钥已存在
                                         // lRUCacheGet 函数已经更新双链表表头，故此处不用更新
