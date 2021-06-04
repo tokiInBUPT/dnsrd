@@ -22,7 +22,7 @@ typedef enum {
     OK,        //无错误
     FORMERR,   //报文格式错误
     SERVFAIL,  //域名服务器失败
-    NXDOMAIN,  //名字错误
+    NXDOMAIN,  //域名不存在
     NOTIMP,    //查询类型不支持
     REFUSED    //查询请求被拒绝
 } DNSPacketRC; //表示响应的差错状态
@@ -89,12 +89,12 @@ typedef struct DNSPacketHeader {
 } DNSPacketHeader;
 
 typedef enum {
-    A = 0x01,     //主机地址
-    NS = 0x02,    //权威服务器
+    A = 0x01,     //IPv4地址
+    NS = 0x02,    //DNS服务器
     CNAME = 0x05, //域名别名
     SOA = 0x06,   //作为权威区数据的起始资源类型
     NUL = 0x0A,   //空
-    PTR = 0x0C,   //域名指针
+    PTR = 0x0C,   //反向查询
     MX = 0x0F,    //邮件交换地址
     TXT = 0x10,   //文本符号
     AAAA = 0x1c,  //IPv6地址
