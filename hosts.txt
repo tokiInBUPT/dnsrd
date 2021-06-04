@@ -1,14 +1,23 @@
-# Default /etc/hosts from linux
-127.0.0.1	localhost
+# NXDOMAIN
 1.2.3.4 www.baidu.com
 :: www.baidu.com
 0.0.0.0 www.google.com
 :: www.google.com
-www.www.com www.test.com
 
+# CNAME
+www.cname-dest.com cname.example.com
+
+# AAAA
 2001:da8:215:8f02::208:1002 ipv6.example.com
 0.0.0.0 ipv6.example.com
 
+# PTR
+dnsrd.by.jray.and.xytoki.and.cn-zyk.dnsrd 1.0.0.127.in-addr.arpa
+dnsrd.by.jray.and.xytoki.and.cn-zyk.dnsrd 235.228.122.10.in-addr.arpa
+
+# Default /etc/hosts from linux
+
+127.0.0.1	localhost
 # The following lines are desirable for IPv6 capable hosts
 ::1	ip6-localhos
 ::1	ip6-loopback

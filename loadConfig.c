@@ -1,5 +1,6 @@
 #include "loadConfig.h"
 #include "DNSPacket.h"
+#include "string.h"
 #include <ws2tcpip.h>
 
 void loadConfig(char *fname, LRUCache *lruCache) {
@@ -73,6 +74,10 @@ void loadConfig(char *fname, LRUCache *lruCache) {
                 strcpy_s(record.rdataName, 257, buf1);
                 toQname(tmp, record.rdata);
                 record.rdataLength = strnlen_s(buf1, 256) + 2;
+                if (strstr(buf2, ".in-addr.arpa") != NULL) {
+                    key.qtype = PTR;
+                    record.type = PTR;
+                }
             } else {
                 record.rdata = (char *)malloc(sizeof(uint8_t) * 4);
                 struct in_addr ipv4data;
