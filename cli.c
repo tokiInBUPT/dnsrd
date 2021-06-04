@@ -66,6 +66,7 @@ DNSRD_RUNTIME initRuntime(DNSRD_CONFIG *config) {
     runtime.idmap = initIdMap();
     runtime.maxId = 0;
     runtime.lruCache = lRUCacheCreate(MAXCACHE);
+    runtime.totalCount = 0;
     loadCache(config->cachefile, &runtime);
     loadConfig(config->hostfile, runtime.lruCache);
     return runtime;

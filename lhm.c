@@ -15,7 +15,6 @@ struct hash *HashMap(struct hash *table, Key key, int capacity) { //哈希地址
         hashValue += key.name[i];
     }
     int addr = hashValue % capacity; //求余数
-    struct hash *tmptmp = &table[addr];
     return &table[addr];
 }
 
@@ -61,10 +60,10 @@ LRUCache *lRUCacheCreate(int capacity) {
 MyData lRUCacheGet(LRUCache *obj, Key key) {
     struct hash *addr = HashMap(obj->table, key, obj->capacity); //取得哈希散列表中关键码对应的地址
     addr = addr->next;                                           //访问该关键码下的第一个结点
-    if (addr == NULL) {//若为NULL，说明该关键码无对应数据
+    if (addr == NULL) {                                          //若为NULL，说明该关键码无对应数据
         MyData tmp;
         tmp.answerCount = Nothingness;
-        return tmp;//返回空结果
+        return tmp; //返回空结果
     }
     while (addr->next != NULL && !same_key(addr->unused->key, key)) { //寻找密钥是否存在
         addr = addr->next;
@@ -74,7 +73,7 @@ MyData lRUCacheGet(LRUCache *obj, Key key) {
         return addr->unused->value;
     }
     MyData tmp;
-    tmp.answerCount = Nothingness;//未查找成功
+    tmp.answerCount = Nothingness; //未查找成功
     return tmp;
 }
 
