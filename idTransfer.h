@@ -10,7 +10,7 @@
 #define MAXID 65535
 
 typedef struct idMap {
-    time_t time;             //请求时间
+    time_t time;             //过期时间
     uint16_t originalId;     //请求方ID
     struct sockaddr_in addr; //请求方IP+端口
 } IdMap;

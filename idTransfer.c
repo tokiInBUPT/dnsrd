@@ -1,7 +1,7 @@
 #include "idTransfer.h"
 
 IdMap *initIdMap() {
-    IdMap *tmp = (IdMap *)malloc(sizeof(IdMap) * MAXID + 1);//???
+    IdMap *tmp = (IdMap *)malloc(sizeof(IdMap) * MAXID + 1); //???
     for (int i = 0; i < MAXID; i++) {
         tmp[i].time = 0;
     }
@@ -18,10 +18,11 @@ int setIdMap(IdMap *idMap, IdMap item, uint16_t curMaxId) {
     time_t t = time(NULL);
     while (idMap[curMaxId].time >= t) {
         curMaxId++;
+        curMaxId %= MAXID;
         if (curMaxId == originId) {
             return -1;
         }
     }
     idMap[curMaxId] = item;
-    return curMaxId;
+    return curMaxId % MAXID;
 }
