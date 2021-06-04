@@ -3,7 +3,7 @@
 #include "idTransfer.h"
 #include "lhm.h"
 #include <WinSock2.h>
-#define MAXCACHE 128
+#define MAXCACHE 1024
 typedef struct DNSRD_CONFIG {
     int debug;          //是否输出debug信息
     int port;           //监听地址，默认53
