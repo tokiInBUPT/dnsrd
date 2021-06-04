@@ -267,7 +267,7 @@ void recvFromUpstream(DNSRD_RUNTIME *runtime) {
     }
     /*判断是否应该缓存*/
     int shouldCache = 1;
-    if (packet.header.rcode != OK || !checkCacheable(packet.questions->qtype)) {
+    if (packet.header.rcode != OK || !checkCacheable(packet.questions->qtype) || packet.header.answerCount < 1) {
         shouldCache = 0;
     }
     if (shouldCache) {
